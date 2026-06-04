@@ -89,7 +89,10 @@ export function RevenuePathModal({ path, onClose }: RevenuePathModalProps) {
 
         <div className="grid gap-5 sm:grid-cols-3">
           {path.stats.map((stat) => (
-            <div key={stat.label} className="rounded-md border border-border p-5">
+            <div
+              key={stat.label}
+              className="rounded-md border border-border p-5"
+            >
               <p className="text-5xl font-semibold tracking-[-0.06em] text-primary">
                 {stat.value}
               </p>

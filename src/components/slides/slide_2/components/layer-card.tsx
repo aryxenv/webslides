@@ -36,9 +36,12 @@ export function LayerCard({ title, detail, index }: LayerCardProps) {
       const isVisible = article.getAttribute("aria-hidden") !== "true";
       if (isVisible) {
         setIsResetting(false);
-        timeoutId = window.setTimeout(() => {
-          setProgress(targetWidth);
-        }, 180 + index * 120);
+        timeoutId = window.setTimeout(
+          () => {
+            setProgress(targetWidth);
+          },
+          180 + index * 120,
+        );
       } else {
         setIsResetting(true);
         setProgress(0);
@@ -69,7 +72,10 @@ export function LayerCard({ title, detail, index }: LayerCardProps) {
       </CardHeader>
       <CardContent className="mt-auto">
         <div className="h-24 border-t border-border pt-5">
-          <div ref={barRef} className="h-2 w-full overflow-hidden rounded-sm bg-muted">
+          <div
+            ref={barRef}
+            className="h-2 w-full overflow-hidden rounded-sm bg-muted"
+          >
             <div
               className="h-2 rounded-sm bg-primary"
               style={{

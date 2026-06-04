@@ -2,7 +2,9 @@ import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { provinceDeltas } from "../data/province-deltas";
 
-const maxDelta = Math.max(...provinceDeltas.map((item) => Math.abs(item.delta)));
+const maxDelta = Math.max(
+  ...provinceDeltas.map((item) => Math.abs(item.delta)),
+);
 
 export function ProvinceDeltaChart() {
   return (
@@ -27,12 +29,18 @@ export function ProvinceDeltaChart() {
               <div className="grid grid-cols-2 items-center">
                 <div className="flex h-3 justify-end border-r border-foreground/30">
                   {!positive ? (
-                    <div className="h-3 rounded-l-sm bg-foreground/25" style={{ width }} />
+                    <div
+                      className="h-3 rounded-l-sm bg-foreground/25"
+                      style={{ width }}
+                    />
                   ) : null}
                 </div>
                 <div className="flex h-3 justify-start">
                   {positive ? (
-                    <div className="h-3 rounded-r-sm bg-primary" style={{ width }} />
+                    <div
+                      className="h-3 rounded-r-sm bg-primary"
+                      style={{ width }}
+                    />
                   ) : null}
                 </div>
               </div>

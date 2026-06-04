@@ -25,7 +25,9 @@ function shouldIgnoreDeckNavigation(event: KeyboardEvent) {
 
   const target = event.target;
 
-  return target instanceof Element && target.closest(interactiveSelector) !== null;
+  return (
+    target instanceof Element && target.closest(interactiveSelector) !== null
+  );
 }
 
 export function usePresentationNavigation(slideCount: number) {

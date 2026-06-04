@@ -18,7 +18,9 @@ export function Slide4() {
               key={metric.label}
               label={metric.label}
               value={metric.value}
-              tone={index === evidenceMetrics.length - 1 ? "primary" : "default"}
+              tone={
+                index === evidenceMetrics.length - 1 ? "primary" : "default"
+              }
             />
           ))}
         </div>

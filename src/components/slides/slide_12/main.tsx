@@ -10,7 +10,11 @@ const impactColumns = [
   },
   {
     title: "Reduced costs",
-    items: ["Less wasted outreach", "Lower acquisition cost", "Efficient fundraising"],
+    items: [
+      "Less wasted outreach",
+      "Lower acquisition cost",
+      "Efficient fundraising",
+    ],
   },
 ];
 
@@ -65,17 +69,11 @@ export function Slide12() {
       challenge="02"
       title="More repeat support. Less wasted outreach."
     >
-      <div
-        ref={rootRef}
-        className="grid h-full gap-6 lg:grid-cols-2"
-      >
+      <div ref={rootRef} className="grid h-full gap-6 lg:grid-cols-2">
         {impactColumns.map((column, index) => {
           const isActive = index === activeIndex;
           return (
-            <Card
-              key={column.title}
-              className="flex flex-col p-8"
-            >
+            <Card key={column.title} className="flex flex-col p-8">
               <Badge variant={isActive ? "default" : "outline"}>
                 {index === 0 ? "Revenue" : "Cost"}
               </Badge>

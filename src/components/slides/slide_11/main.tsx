@@ -3,7 +3,13 @@ import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { sponsors, type Sponsor, type SponsorPriority } from "./data/sponsors";
 
-type SortKey = "name" | "donations" | "averageGift" | "lastDonationMonths" | "likelihood" | "priority";
+type SortKey =
+  | "name"
+  | "donations"
+  | "averageGift"
+  | "lastDonationMonths"
+  | "likelihood"
+  | "priority";
 
 const priorityOrder: Record<SponsorPriority, number> = {
   High: 0,
@@ -27,10 +33,26 @@ function priorityClass(priority: SponsorPriority) {
   return "border-border bg-background text-muted-foreground";
 }
 
-function SortIcon({ active, sortDirection }: { active: boolean; sortDirection: 1 | -1 }) {
+function SortIcon({
+  active,
+  sortDirection,
+}: {
+  active: boolean;
+  sortDirection: 1 | -1;
+}) {
   if (!active) {
     return (
-      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <svg
+        width="12"
+        height="12"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        aria-hidden="true"
+      >
         <path d="m8 9 4-5 4 5" />
         <path d="m8 15 4 5 4-5" />
       </svg>
@@ -38,8 +60,22 @@ function SortIcon({ active, sortDirection }: { active: boolean; sortDirection: 1
   }
 
   return (
-    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      {sortDirection === -1 ? <path d="m6 9 6 6 6-6" /> : <path d="m6 15 6-6 6 6" />}
+    <svg
+      width="12"
+      height="12"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      {sortDirection === -1 ? (
+        <path d="m6 9 6 6 6-6" />
+      ) : (
+        <path d="m6 15 6-6 6 6" />
+      )}
     </svg>
   );
 }
@@ -110,7 +146,10 @@ export function Slide11() {
       }
 
       if (sortKey === "priority") {
-        return sortDirection * (priorityOrder[a.priority] - priorityOrder[b.priority]);
+        return (
+          sortDirection *
+          (priorityOrder[a.priority] - priorityOrder[b.priority])
+        );
       }
 
       return sortDirection * ((b[sortKey] as number) - (a[sortKey] as number));
@@ -130,7 +169,9 @@ export function Slide11() {
 
     return {
       totalSponsors: count,
-      highPriority: sortedSponsors.filter((sponsor) => sponsor.priority === "High").length,
+      highPriority: sortedSponsors.filter(
+        (sponsor) => sponsor.priority === "High",
+      ).length,
       averageGift: count ? Math.round(totalGift / count) : 0,
       averageLikelihood: count ? Math.round(totalLikelihood / count) : 0,
     };
@@ -238,18 +279,69 @@ export function Slide11() {
             <table className="w-full border-collapse text-sm">
               <thead className="sticky top-0 z-10 bg-muted">
                 <tr className="border-b border-border">
-                  <th className="px-4 py-3 text-left"><SortButton activeSortKey={sortKey} label="Sponsor" onSort={handleSort} sortDirection={sortDirection} value="name" /></th>
-                  <th className="px-4 py-3 text-center"><SortButton activeSortKey={sortKey} label="Donations" onSort={handleSort} sortDirection={sortDirection} value="donations" /></th>
-                  <th className="px-4 py-3 text-right"><SortButton activeSortKey={sortKey} label="Avg Donation" onSort={handleSort} sortDirection={sortDirection} value="averageGift" /></th>
-                  <th className="px-4 py-3 text-left"><SortButton activeSortKey={sortKey} label="Last" onSort={handleSort} sortDirection={sortDirection} value="lastDonationMonths" /></th>
-                  <th className="px-4 py-3 text-left"><SortButton activeSortKey={sortKey} label="Likelihood" onSort={handleSort} sortDirection={sortDirection} value="likelihood" /></th>
-                  <th className="px-4 py-3 text-left"><SortButton activeSortKey={sortKey} label="Priority" onSort={handleSort} sortDirection={sortDirection} value="priority" /></th>
+                  <th className="px-4 py-3 text-left">
+                    <SortButton
+                      activeSortKey={sortKey}
+                      label="Sponsor"
+                      onSort={handleSort}
+                      sortDirection={sortDirection}
+                      value="name"
+                    />
+                  </th>
+                  <th className="px-4 py-3 text-center">
+                    <SortButton
+                      activeSortKey={sortKey}
+                      label="Donations"
+                      onSort={handleSort}
+                      sortDirection={sortDirection}
+                      value="donations"
+                    />
+                  </th>
+                  <th className="px-4 py-3 text-right">
+                    <SortButton
+                      activeSortKey={sortKey}
+                      label="Avg Donation"
+                      onSort={handleSort}
+                      sortDirection={sortDirection}
+                      value="averageGift"
+                    />
+                  </th>
+                  <th className="px-4 py-3 text-left">
+                    <SortButton
+                      activeSortKey={sortKey}
+                      label="Last"
+                      onSort={handleSort}
+                      sortDirection={sortDirection}
+                      value="lastDonationMonths"
+                    />
+                  </th>
+                  <th className="px-4 py-3 text-left">
+                    <SortButton
+                      activeSortKey={sortKey}
+                      label="Likelihood"
+                      onSort={handleSort}
+                      sortDirection={sortDirection}
+                      value="likelihood"
+                    />
+                  </th>
+                  <th className="px-4 py-3 text-left">
+                    <SortButton
+                      activeSortKey={sortKey}
+                      label="Priority"
+                      onSort={handleSort}
+                      sortDirection={sortDirection}
+                      value="priority"
+                    />
+                  </th>
                 </tr>
               </thead>
               <tbody>
                 {sortedSponsors.length === 0 ? (
                   <tr>
-                    <td className="px-4 py-10 text-center text-muted-foreground" colSpan={6}>
+                    <td
+                      className="px-4 py-10 text-center text-muted-foreground"
+                      colSpan={6}
+                    >
                       No sponsors match the filters.
                     </td>
                   </tr>
@@ -302,11 +394,15 @@ function FragmentRow({
           </p>
           <p className="text-xs text-muted-foreground">{sponsor.type}</p>
         </td>
-        <td className="px-4 py-3 text-center font-semibold">{sponsor.donations}</td>
+        <td className="px-4 py-3 text-center font-semibold">
+          {sponsor.donations}
+        </td>
         <td className="px-4 py-3 text-right font-semibold">
           {formatCurrency(sponsor.averageGift)}
         </td>
-        <td className="px-4 py-3 text-muted-foreground">{sponsor.lastDonationLabel}</td>
+        <td className="px-4 py-3 text-muted-foreground">
+          {sponsor.lastDonationLabel}
+        </td>
         <td className="px-4 py-3">
           <div className="flex items-center gap-2">
             <span className="h-2 flex-1 rounded-sm bg-muted">
@@ -321,7 +417,12 @@ function FragmentRow({
           </div>
         </td>
         <td className="px-4 py-3">
-          <span className={cn("rounded-sm border px-2 py-1 text-xs font-semibold", priorityClass(sponsor.priority))}>
+          <span
+            className={cn(
+              "rounded-sm border px-2 py-1 text-xs font-semibold",
+              priorityClass(sponsor.priority),
+            )}
+          >
             {sponsor.priority}
           </span>
         </td>
@@ -331,10 +432,22 @@ function FragmentRow({
           <td colSpan={6} className="px-4 py-5">
             <div className="grid gap-4">
               <div className="grid gap-5 lg:grid-cols-4">
-                <MiniFact label="Total donations" value={String(sponsor.donations)} />
-                <MiniFact label="Avg Donation" value={formatCurrency(sponsor.averageGift)} />
-                <MiniFact label="Last donated" value={sponsor.lastDonationLabel} />
-                <MiniFact label="Likelihood score" value={`${sponsor.likelihood}%`} />
+                <MiniFact
+                  label="Total donations"
+                  value={String(sponsor.donations)}
+                />
+                <MiniFact
+                  label="Avg Donation"
+                  value={formatCurrency(sponsor.averageGift)}
+                />
+                <MiniFact
+                  label="Last donated"
+                  value={sponsor.lastDonationLabel}
+                />
+                <MiniFact
+                  label="Likelihood score"
+                  value={`${sponsor.likelihood}%`}
+                />
               </div>
               <p className="border-t border-border pt-4 text-sm leading-6 text-muted-foreground">
                 {sponsor.note}
@@ -351,9 +464,7 @@ function MiniFact({ label, value }: { label: string; value: string }) {
   return (
     <div>
       <p className="text-lg font-semibold tracking-[-0.03em]">{value}</p>
-      <p className="mt-1 text-xs text-muted-foreground">
-        {label}
-      </p>
+      <p className="mt-1 text-xs text-muted-foreground">{label}</p>
     </div>
   );
 }

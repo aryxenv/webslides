@@ -15,7 +15,10 @@ export function AthleteTrend() {
       </div>
       <div className="grid min-h-0 flex-1 grid-cols-9 items-end gap-3 pt-6">
         {athleteTrend.map((item) => (
-          <div key={item.year} className="flex h-full flex-col justify-end gap-3">
+          <div
+            key={item.year}
+            className="flex h-full flex-col justify-end gap-3"
+          >
             <div className="text-center text-xs font-semibold text-muted-foreground">
               {item.value.toLocaleString("en-US")}
             </div>

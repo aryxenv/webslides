@@ -79,7 +79,9 @@ function ScenarioCard({
       )}
     >
       <div className="flex items-center justify-between">
-        <Badge variant={isActive ? "default" : "outline"}>{scenario.name}</Badge>
+        <Badge variant={isActive ? "default" : "outline"}>
+          {scenario.name}
+        </Badge>
       </div>
 
       <div>

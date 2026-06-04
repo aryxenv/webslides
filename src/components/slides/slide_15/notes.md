@@ -20,7 +20,7 @@ annual revenue = MAU × conversion % × avg monthly donation × 12
 The only thing that changes between scenarios is the three inputs:
 
 | Scenario     | MAU Y1 | Conversion | Avg donation | Year 3 revenue |
-|--------------|--------|------------|--------------|----------------|
+| ------------ | ------ | ---------- | ------------ | -------------- |
 | Conservative | 2,000  | 0.5%       | €10 / mo     | €1,872         |
 | Realistic    | 10,000 | 1.0%       | €10 / mo     | €18,720        |
 | Optimistic   | 50,000 | 2.0%       | €10 / mo     | €187,200       |
@@ -32,6 +32,7 @@ the starting assumptions, not by cherry-picked growth.
 Source model: `App_Forecast_Model.xlsx`.
 
 ## Talking points
+
 - These are recurring donations, so the figure compounds with retention — this is a
   revenue stream, not a one-off campaign.
 - The inputs are levers SOB controls: app reach (MAU), how good the ask is (conversion),

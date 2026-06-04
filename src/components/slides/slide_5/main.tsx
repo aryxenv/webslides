@@ -7,7 +7,7 @@ import { revenuePaths } from "./data/revenue-paths";
 export function Slide5() {
   const [activePathIndex, setActivePathIndex] = useState<number | null>(null);
   const activePath =
-    activePathIndex === null ? null : revenuePaths[activePathIndex] ?? null;
+    activePathIndex === null ? null : (revenuePaths[activePathIndex] ?? null);
 
   return (
     <SlideFrame

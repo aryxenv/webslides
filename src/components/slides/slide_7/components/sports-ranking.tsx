@@ -14,7 +14,10 @@ export function SportsRanking() {
       </div>
       <div className="grid gap-4 pt-6">
         {sportsRanking.map((item) => (
-          <div key={item.sport} className="grid grid-cols-[8rem_1fr_3rem] items-center gap-4">
+          <div
+            key={item.sport}
+            className="grid grid-cols-[8rem_1fr_3rem] items-center gap-4"
+          >
             <span className="text-sm font-semibold">{item.sport}</span>
             <span className="h-3 rounded-sm bg-muted">
               <span
@@ -22,7 +25,9 @@ export function SportsRanking() {
                 style={{ width: `${(item.medals / maxMedals) * 100}%` }}
               />
             </span>
-            <span className="text-right text-sm font-semibold">{item.medals}</span>
+            <span className="text-right text-sm font-semibold">
+              {item.medals}
+            </span>
           </div>
         ))}
       </div>

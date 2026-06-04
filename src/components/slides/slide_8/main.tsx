@@ -82,10 +82,7 @@ export function Slide8() {
       title="The missing signal."
       subtitle="The next growth lever is collection, not reporting."
     >
-      <div
-        ref={rootRef}
-        className="grid h-full gap-6 lg:grid-cols-[1fr_1fr]"
-      >
+      <div ref={rootRef} className="grid h-full gap-6 lg:grid-cols-[1fr_1fr]">
         <SignalColumn
           title="Already visible"
           items={knownSignals}

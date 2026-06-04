@@ -8,4 +8,4 @@ Demonstrate search, filters, sorting by likelihood or donations, and row expansi
 
 Right now the likelihood score is a deterministic math function over the data we already have — donation count, recency, average gift, sport alignment. That's enough to rank sponsors usefully today, with zero extra data collection.
 
-The same column becomes the entry point for **machine learning** the moment SOB has enough signal: every gift, every conversion, every drop-off feeds a model that learns *which* combination of features actually predicts the next gift for this org specifically. The UI stays identical — the speaker can swap the brain underneath without changing the table.
+The same column becomes the entry point for **machine learning** the moment SOB has enough signal: every gift, every conversion, every drop-off feeds a model that learns _which_ combination of features actually predicts the next gift for this org specifically. The UI stays identical — the speaker can swap the brain underneath without changing the table.
