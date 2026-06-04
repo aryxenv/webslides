@@ -1,21 +1,17 @@
 import type { ComponentType } from "react";
-import { useEffect } from "react";
-import { Slide1 } from "@/components/slides/slide_1/main";
-import { Slide2 } from "@/components/slides/slide_2/main";
-import { Slide3 } from "@/components/slides/slide_3/main";
-import { Slide4 } from "@/components/slides/slide_4/main";
-import { Slide5 } from "@/components/slides/slide_5/main";
-import { Slide6 } from "@/components/slides/slide_6/main";
-import { Slide7 } from "@/components/slides/slide_7/main";
-import { Slide8 } from "@/components/slides/slide_8/main";
-import { Slide9 } from "@/components/slides/slide_9/main";
-import { Slide10 } from "@/components/slides/slide_10/main";
-import { Slide11 } from "@/components/slides/slide_11/main";
-import { Slide12 } from "@/components/slides/slide_12/main";
-import { Slide13 } from "@/components/slides/slide_13/main";
-import { Slide14 } from "@/components/slides/slide_14/main";
-import { Slide15 } from "@/components/slides/slide_15/main";
+import { useCallback, useEffect, useState } from "react";
+import { AgentDrivenAuthoring } from "@/components/slides/agent-driven-authoring/main";
+import { EmbeddedDemoWorkflow } from "@/components/slides/embedded-demo-workflow/main";
+import { PickPolishCustomization } from "@/components/slides/pick-polish-customization/main";
+import { WebslidesIntroduction } from "@/components/slides/webslides-introduction/main";
+import type { SlideProps } from "@/components/slides/types";
+import { Button } from "@/components/ui/button";
 import { usePresentationNavigation } from "@/hooks/usePresentationNavigation";
+import { useSwipeNavigation } from "@/hooks/useSwipeNavigation";
+import {
+  isSpaceKey,
+  shouldIgnorePresentationShortcut,
+} from "@/lib/presentation-shortcuts";
 import { cn } from "@/lib/utils";
 
 declare global {
@@ -27,40 +23,95 @@ declare global {
 interface SlideDefinition {
   id: string;
   label: string;
-  Component: ComponentType;
-  hideProgress?: boolean;
+  Component: ComponentType<SlideProps>;
+  cycleItems: number;
 }
 
 const slides: SlideDefinition[] = [
-  { id: "slide-1", label: "Hook", Component: Slide1 },
-  { id: "slide-2", label: "Agenda", Component: Slide2 },
-  { id: "slide-3", label: "Owned data", Component: Slide3 },
-  { id: "slide-4", label: "Evidence base", Component: Slide4 },
-  { id: "slide-5", label: "Revenue paths", Component: Slide5 },
-  { id: "slide-6", label: "Movement signal", Component: Slide6 },
-  { id: "slide-7", label: "Sponsor proof", Component: Slide7 },
-  { id: "slide-8", label: "Missing signal", Component: Slide8 },
-  { id: "slide-9", label: "Supporter opportunity", Component: Slide9 },
-  { id: "slide-10", label: "Supporter data", Component: Slide10 },
   {
-    id: "slide-11",
-    label: "Sponsor dashboard demo",
-    Component: Slide11,
-    hideProgress: true,
+    id: "webslides-introduction",
+    label: "Webslides introduction",
+    Component: WebslidesIntroduction,
+    cycleItems: 3,
   },
-  { id: "slide-12", label: "Business impact", Component: Slide12 },
   {
-    id: "slide-13",
-    label: "Sphere app story",
-    Component: Slide13,
-    hideProgress: true,
+    id: "agent-driven-authoring",
+    label: "Agent-driven authoring",
+    Component: AgentDrivenAuthoring,
+    cycleItems: 4,
   },
-  { id: "slide-14", label: "From static to community", Component: Slide14 },
-  { id: "slide-15", label: "Donation forecast", Component: Slide15 },
+  {
+    id: "embedded-demo-workflow",
+    label: "Embedded demo workflow",
+    Component: EmbeddedDemoWorkflow,
+    cycleItems: 4,
+  },
+  {
+    id: "pick-polish-customization",
+    label: "Pick and polish customization",
+    Component: PickPolishCustomization,
+    cycleItems: 3,
+  },
 ];
 
+const slideIds: readonly string[] = slides.map((slide) => slide.id);
+
+interface CycleState {
+  slideId: string;
+  index: number;
+}
+
 export function Presentation() {
-  const { activeIndex, progress } = usePresentationNavigation(slides.length);
+  const {
+    activeIndex,
+    canGoNext,
+    canGoPrevious,
+    nextSlide,
+    previousSlide,
+    progress,
+  } = usePresentationNavigation(slideIds);
+  const [cycleState, setCycleState] = useState<CycleState>({
+    slideId: "",
+    index: 0,
+  });
+  const activeSlide = slides[activeIndex];
+  const activeSlideId = activeSlide?.id ?? "";
+  const cycleCount = activeSlide?.cycleItems ?? 0;
+  const activeCycleIndex =
+    cycleState.slideId === activeSlideId ? cycleState.index : 0;
+
+  const cycleActiveSlide = useCallback(() => {
+    if (!activeSlide || cycleCount === 0) {
+      return;
+    }
+
+    setCycleState((current) => {
+      const currentIndex =
+        current.slideId === activeSlide.id ? current.index : 0;
+
+      return {
+        slideId: activeSlide.id,
+        index: (currentIndex + 1) % cycleCount,
+      };
+    });
+  }, [activeSlide, cycleCount]);
+
+  const selectCycle = useCallback(
+    (index: number) => {
+      if (!activeSlide || cycleCount === 0) {
+        return;
+      }
+
+      const clamped = Math.min(Math.max(index, 0), cycleCount - 1);
+      setCycleState({ slideId: activeSlide.id, index: clamped });
+    },
+    [activeSlide, cycleCount],
+  );
+
+  const swipeHandlers = useSwipeNavigation({
+    onSwipeLeft: nextSlide,
+    onSwipeRight: previousSlide,
+  });
 
   useEffect(() => {
     let raf = 0;
@@ -72,10 +123,43 @@ export function Presentation() {
     return () => cancelAnimationFrame(raf);
   }, []);
 
+  useEffect(() => {
+    if (!activeSlideId) {
+      return;
+    }
+
+    setCycleState({ slideId: activeSlideId, index: 0 });
+  }, [activeSlideId]);
+
+  useEffect(() => {
+    function handleSpacebar(event: KeyboardEvent) {
+      if (
+        !isSpaceKey(event) ||
+        event.repeat ||
+        shouldIgnorePresentationShortcut(event)
+      ) {
+        return;
+      }
+
+      if (cycleCount === 0) {
+        return;
+      }
+
+      event.preventDefault();
+      cycleActiveSlide();
+    }
+
+    window.addEventListener("keydown", handleSpacebar);
+    return () => window.removeEventListener("keydown", handleSpacebar);
+  }, [cycleActiveSlide, cycleCount]);
+
   return (
-    <main className="min-h-screen overflow-hidden bg-white text-foreground">
-      <div className="relative h-screen w-screen">
-        {slides.map(({ id, label, Component }, index) => {
+    <main className="flex h-dvh flex-col overflow-hidden bg-background text-foreground">
+      <div
+        className="relative min-h-0 w-full flex-1 max-[900px]:touch-pan-y"
+        {...swipeHandlers}
+      >
+        {slides.map(({ id, label, Component, cycleItems }, index) => {
           const isActive = index === activeIndex;
 
           return (
@@ -91,27 +175,52 @@ export function Presentation() {
               )}
               inert={!isActive}
             >
-              <Component />
+              <Component
+                isActive={isActive}
+                cycleIndex={isActive ? activeCycleIndex : 0}
+                cycleCount={cycleItems}
+                onSelectCycle={selectCycle}
+              />
             </article>
           );
         })}
-
-        {!slides[activeIndex]?.hideProgress ? (
-          <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 border-t border-border bg-white/90 px-6 py-3">
-            <div className="flex items-center gap-4">
-              <div className="h-1 flex-1 rounded-sm bg-muted">
-                <div
-                  className="h-1 rounded-sm bg-primary transition-all duration-500 ease-in-out"
-                  style={{ width: `${progress * 100}%` }}
-                />
-              </div>
-              <p className="min-w-20 text-right text-xs font-semibold text-muted-foreground">
-                {activeIndex + 1} / {slides.length}
-              </p>
-            </div>
-          </div>
-        ) : null}
       </div>
+
+      <footer className="z-10 shrink-0 border-t border-border bg-background px-4 py-3 sm:px-6">
+        <div className="mx-auto flex max-w-7xl flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
+          <div className="flex min-w-0 flex-1 items-center gap-4">
+            <div className="h-1 flex-1 rounded-sm bg-muted">
+              <div
+                className="h-1 rounded-sm bg-primary transition-all duration-500 ease-in-out"
+                style={{ width: `${progress * 100}%` }}
+              />
+            </div>
+            <span className="min-w-fit text-xs font-semibold text-muted-foreground">
+              {activeIndex + 1} / {slides.length}
+            </span>
+          </div>
+
+          <div className="hidden items-center gap-2 sm:flex sm:justify-end">
+            <Button
+              disabled={!canGoPrevious}
+              onClick={previousSlide}
+              size="sm"
+              type="button"
+              variant="outline"
+            >
+              Previous
+            </Button>
+            <Button
+              disabled={!canGoNext}
+              onClick={nextSlide}
+              size="sm"
+              type="button"
+            >
+              Next
+            </Button>
+          </div>
+        </div>
+      </footer>
     </main>
   );
 }

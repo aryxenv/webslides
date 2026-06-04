@@ -24,6 +24,5 @@
     "erasableSyntaxOnly": true,
     "noFallthroughCasesInSwitch": true
   },
-  "include": ["src"],
-  "exclude": ["src/components/slides/slide_13/embed/web-src"]
+  "include": ["src"]
 }

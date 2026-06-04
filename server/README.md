@@ -14,7 +14,7 @@ uv sync
 start server (dev mode):
 
 ```pwsh
-uv run fastapi dev --reload
+uv run fastapi dev
 ```
 
 ## Structure

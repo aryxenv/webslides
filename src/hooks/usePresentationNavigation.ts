@@ -1,64 +1,107 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { shouldIgnorePresentationShortcut } from "@/lib/presentation-shortcuts";
 
 const arrowKeys = new Set(["ArrowRight", "ArrowDown", "ArrowLeft", "ArrowUp"]);
-const interactiveSelector = [
-  "input",
-  "textarea",
-  "select",
-  "[contenteditable='true']",
-  "[role='textbox']",
-  "[role='slider']",
-  "[role='listbox']",
-  "[role='grid']",
-  "[role='tablist']",
-  "[data-capture-arrows]",
-].join(",");
 
-function shouldIgnoreDeckNavigation(event: KeyboardEvent) {
-  if (!arrowKeys.has(event.key) || event.defaultPrevented) {
-    return true;
+const SLIDE_PARAM = "slide";
+
+function readIndexFromUrl(slideIds: readonly string[]): number {
+  if (typeof window === "undefined") {
+    return 0;
   }
 
-  if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) {
-    return true;
-  }
-
-  const target = event.target;
-
-  return (
-    target instanceof Element && target.closest(interactiveSelector) !== null
-  );
+  const id = new URLSearchParams(window.location.search).get(SLIDE_PARAM);
+  const index = id ? slideIds.indexOf(id) : -1;
+  return index >= 0 ? index : 0;
 }
 
-export function usePresentationNavigation(slideCount: number) {
-  const [activeIndex, setActiveIndex] = useState(0);
+export function usePresentationNavigation(slideIds: readonly string[]) {
+  const slideCount = slideIds.length;
+  const [activeIndex, setActiveIndex] = useState(() =>
+    readIndexFromUrl(slideIds),
+  );
+
+  const previousSlide = useCallback(() => {
+    setActiveIndex((current) =>
+      slideCount === 0 ? 0 : (current - 1 + slideCount) % slideCount,
+    );
+  }, [slideCount]);
+
+  const nextSlide = useCallback(() => {
+    setActiveIndex((current) =>
+      slideCount === 0 ? 0 : (current + 1) % slideCount,
+    );
+  }, [slideCount]);
+
+  useEffect(() => {
+    setActiveIndex((current) => Math.min(current, Math.max(slideCount - 1, 0)));
+  }, [slideCount]);
+
+  // Reflect the active slide in the URL (?slide=<id>) so refreshing returns to
+  // the same slide and the link can be shared.
+  useEffect(() => {
+    const id = slideIds[activeIndex];
+    if (!id) {
+      return;
+    }
+
+    const params = new URLSearchParams(window.location.search);
+    if (params.get(SLIDE_PARAM) === id) {
+      return;
+    }
+
+    params.set(SLIDE_PARAM, id);
+    const query = params.toString();
+    window.history.replaceState(
+      null,
+      "",
+      `${window.location.pathname}?${query}${window.location.hash}`,
+    );
+  }, [activeIndex, slideIds]);
+
+  // Respond to back/forward navigation and manual URL edits.
+  useEffect(() => {
+    function handlePopState() {
+      setActiveIndex(readIndexFromUrl(slideIds));
+    }
+
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, [slideIds]);
 
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
-      if (shouldIgnoreDeckNavigation(event)) {
+      if (
+        !arrowKeys.has(event.key) ||
+        shouldIgnorePresentationShortcut(event)
+      ) {
         return;
       }
 
       if (event.key === "ArrowRight" || event.key === "ArrowDown") {
         event.preventDefault();
-        setActiveIndex((current) => (current + 1) % slideCount);
+        nextSlide();
       }
 
       if (event.key === "ArrowLeft" || event.key === "ArrowUp") {
         event.preventDefault();
-        setActiveIndex((current) => (current - 1 + slideCount) % slideCount);
+        previousSlide();
       }
     }
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [slideCount]);
+  }, [nextSlide, previousSlide]);
 
   return useMemo(
     () => ({
       activeIndex,
+      canGoNext: slideCount > 1,
+      canGoPrevious: slideCount > 1,
+      nextSlide,
+      previousSlide,
       progress: slideCount === 0 ? 0 : (activeIndex + 1) / slideCount,
     }),
-    [activeIndex, slideCount],
+    [activeIndex, nextSlide, previousSlide, slideCount],
   );
 }

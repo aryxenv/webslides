@@ -21,19 +21,19 @@
     --card-foreground: 0 0% 5%;
     --popover: 0 0% 100%;
     --popover-foreground: 0 0% 5%;
-    --primary: 350 81% 49%;
+    --primary: 0 0% 8%;
     --primary-foreground: 0 0% 100%;
     --secondary: 0 0% 96%;
     --secondary-foreground: 0 0% 8%;
     --muted: 0 0% 96%;
     --muted-foreground: 0 0% 36%;
-    --accent: 350 81% 49%;
+    --accent: 0 0% 10%;
     --accent-foreground: 0 0% 100%;
-    --destructive: 0 84% 60%;
+    --destructive: 0 0% 16%;
     --destructive-foreground: 0 0% 100%;
     --border: 0 0% 88%;
     --input: 0 0% 88%;
-    --ring: 350 81% 49%;
+    --ring: 0 0% 8%;
     --radius: 0.375rem;
   }
 
@@ -52,5 +52,18 @@
     font-feature-settings:
       "rlig" 1,
       "calt" 1;
+  }
+
+  /* Hide scrollbars globally while keeping scroll functionality.
+     scrollbar-width: none covers Firefox and Chromium 121+; the webkit rule
+     covers Safari and older Chromium. Content stays fully scrollable. */
+  * {
+    scrollbar-width: none;
+  }
+
+  *::-webkit-scrollbar {
+    display: none;
+    width: 0;
+    height: 0;
   }
 }

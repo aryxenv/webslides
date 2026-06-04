@@ -40,12 +40,6 @@ const config: Config = {
           DEFAULT: "hsl(var(--popover))",
           foreground: "hsl(var(--popover-foreground))",
         },
-        sob: {
-          red: "#E31837",
-          black: "#111111",
-          line: "#E5E7EB",
-          soft: "#F7F7F7",
-        },
       },
       borderRadius: {
         lg: "var(--radius)",
