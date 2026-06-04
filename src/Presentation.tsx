@@ -187,7 +187,7 @@ export function Presentation() {
       </div>
 
       <footer className="z-10 shrink-0 border-t border-border bg-background px-4 py-3 sm:px-6">
-        <div className="mx-auto flex max-w-7xl flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
           <div className="flex min-w-0 flex-1 items-center gap-4">
             <div className="h-1 flex-1 rounded-sm bg-muted">
               <div
