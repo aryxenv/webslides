@@ -2,22 +2,12 @@ import { useQuery } from "@tanstack/react-query";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { fetchHealth, SERVER_URL } from "@/lib/api";
+import { describeServerError, fetchHealth, SERVER_URL } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
 interface ServerHealthCardProps {
   isActive: boolean;
   onSelect: () => void;
-}
-
-/** A failed fetch (connection refused / server down) surfaces as a TypeError,
- * unlike an HTTP error response which carries a status message. */
-function describeError(error: unknown): string {
-  if (error instanceof TypeError) {
-    return "Server unavailable — start the server with `uv run fastapi dev`.";
-  }
-
-  return error instanceof Error ? error.message : "Request failed.";
 }
 
 /** Live demo: a slide calling the FastAPI server's GET /health route through
@@ -47,7 +37,7 @@ export function ServerHealthCard({
     state === "loading"
       ? "Calling /health…"
       : state === "error"
-        ? describeError(health.error)
+        ? describeServerError(health.error)
         : (health.data?.status ?? "No status returned");
 
   return (

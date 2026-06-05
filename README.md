@@ -37,6 +37,33 @@ Available at http://localhost:8000 (no config needed - automatically available o
   default. Individual slides can customize this behavior for demos.
 - **Swipe**: on phones, swipe left or right to move between slides.
 
+## Export locally
+
+The local dev presentation includes an **Export** icon in the footer. It opens a
+popup menu where each option opens its own dialog. The control is hidden from
+production builds and GitHub Pages.
+
+- **PDF - Static (Private)**: starts the local FastAPI export route, renders the
+  full deck, writes `exports/webslides.pdf`, and downloads the same file.
+- **PowerPoint - Static (Private)**: starts the local FastAPI export route,
+  generates the native PowerPoint deck, writes `exports/webslides.pptx`, and
+  downloads the same file.
+- **GitHub Pages - Interactive (Public)**: use the existing Pages workflow when
+  the deck contains no customer-specific data.
+
+Generated files in `exports/` are ignored by git by default so private PDF/PPTX
+artifacts do not get pushed or deployed accidentally.
+
+For PDF and PowerPoint export, run both the client (`npm run dev`) and the server
+(`uv run fastapi dev`) locally.
+
+PDF export uses Playwright. It first tries the local Microsoft Edge browser; if
+that is unavailable, install Playwright's browser with:
+
+```pwsh
+npx playwright install chromium
+```
+
 ## Theming
 
 The demo uses a monochrome palette by default, the idea would be to modify the theme to your liking for a specific project.
@@ -66,7 +93,6 @@ follows the matching skill:
 - **Edit a slide**: change copy, layout, styling, or interactions safely.
 - **Integrate demo into slides**: drop in a whole app (in the repo or shared in
   chat) and map it into the deck, wiring up the `server/` backend if needed.
-
 Slides live in `src/components/slides/<topic>/` and are listed, in order, in
 `src/Presentation.tsx`. Folders are named by topic (not `slide_1`, `slide_2`), so
 slides can be inserted or reordered freely. Demos that need backend logic use the

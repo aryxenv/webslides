@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from src.router.diagnostics import router as diagnostics_router
+from src.router.exports import router as exports_router
 
 app = FastAPI()
 
@@ -19,6 +20,7 @@ async def root():
     return {"message": "Hello World"}
 
 app.include_router(diagnostics_router)
+app.include_router(exports_router)
 
 
 if __name__ == "__main__":
