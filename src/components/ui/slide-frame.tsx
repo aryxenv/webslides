@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 import { BrandLockup } from "@/components/ui/brand-lockup";
+import { HelpDialog } from "@/components/ui/help-dialog";
 import { ServerHealthDot } from "@/components/ui/server-health-dot";
 
 interface SlideFrameProps {
@@ -32,7 +33,7 @@ export function SlideFrame({
       <header className="shrink-0 border-b border-border pb-6 sm:pb-8">
         {eyebrow ? (
           <div className="flex flex-row items-center justify-between gap-4">
-            <div className="flex flex-row items-center gap-2.5">
+            <div className="flex min-w-0 flex-row items-center gap-2.5">
               <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary sm:text-sm sm:tracking-[0.22em]">
                 {challenge ? (
                   <>
@@ -45,7 +46,10 @@ export function SlideFrame({
               <ServerHealthDot />
               {eyebrowAdornment}
             </div>
-            <BrandLockup />
+            <div className="ml-auto flex shrink-0 items-center gap-3">
+              <BrandLockup />
+              <HelpDialog />
+            </div>
           </div>
         ) : null}
         <div className="mt-5 grid gap-4 lg:grid-cols-1 lg:items-end">
