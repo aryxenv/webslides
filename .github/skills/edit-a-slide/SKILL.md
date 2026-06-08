@@ -1,6 +1,6 @@
 ---
 name: edit-a-slide
-description: Modify an existing slide in the webslides deck. Use when the user asks to "edit a slide", "change/update/tweak a slide", adjust copy, layout, styling, or interactions on a slide, reorder slides, or rename/remove one. Covers how to locate the slide and the rules that keep edits safe.
+description: Modify an existing slide in the webslides deck. Use when the user asks to "edit a slide", "change/update/tweak a slide", adjust copy, layout, styling, or interactions on a slide, reorder slides, rename one, or remove content within a slide. Covers how to locate the slide and the rules that keep edits safe. Do not use for deleting an entire slide; use delete-a-slide.
 ---
 
 # Edit a slide
@@ -42,6 +42,11 @@ DON'T:
   intentional semantic states like red for errors, when requested).
 - Refactor or restyle parts the user didn't ask about, or change the global
   design system / UI primitives to fix one slide.
+- Delete an entire slide from the deck; use `delete-a-slide` for whole-slide
+  removal.
+- Do not update `scripts/export-pptx.mjs` or generated files in `exports/`
+  during normal web slide edits. PowerPoint parity is a separate static
+  export-template task handled by `update-pptx-export-template`.
 
 ## Phase 3 — Keep invariants intact
 
@@ -59,8 +64,6 @@ These are the things that silently break a slide if ignored:
 - **Ids are contracts**: changing a slide's `id` changes its shareable URL. Only
   rename when asked, and update the `slides` entry. Reordering = move the array
   entry (don't renumber anything; ids are positional-free by design).
-- **Removing a slide**: delete its folder AND its `slides` entry (and the
-  import). Don't leave dead references.
 
 ## Phase 4 — Verify
 
@@ -68,3 +71,5 @@ These are the things that silently break a slide if ignored:
   Confirm the change, that cycling still works, and that there's no horizontal
   overflow at a narrow width.
 - Run `npm run build` to typecheck and `npx prettier --write` on changed files.
+- Do not run or update the PowerPoint export template unless that was explicitly
+  requested as a separate export-template task.

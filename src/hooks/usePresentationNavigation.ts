@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { shouldIgnorePresentationShortcut } from "@/lib/presentation-shortcuts";
 
-const arrowKeys = new Set(["ArrowRight", "ArrowDown", "ArrowLeft", "ArrowUp"]);
+const slideNavigationKeys = new Set(["ArrowRight", "ArrowLeft"]);
 
 const SLIDE_PARAM = "slide";
 
@@ -72,18 +72,18 @@ export function usePresentationNavigation(slideIds: readonly string[]) {
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
       if (
-        !arrowKeys.has(event.key) ||
+        !slideNavigationKeys.has(event.key) ||
         shouldIgnorePresentationShortcut(event)
       ) {
         return;
       }
 
-      if (event.key === "ArrowRight" || event.key === "ArrowDown") {
+      if (event.key === "ArrowRight") {
         event.preventDefault();
         nextSlide();
       }
 
-      if (event.key === "ArrowLeft" || event.key === "ArrowUp") {
+      if (event.key === "ArrowLeft") {
         event.preventDefault();
         previousSlide();
       }

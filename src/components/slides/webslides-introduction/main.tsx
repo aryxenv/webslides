@@ -11,7 +11,7 @@ const controls = [
   {
     key: "← / →",
     label: "Move through the deck",
-    detail: "Arrow keys step between slides.",
+    detail: "Left and right arrows step between slides.",
   },
   {
     key: "Space",

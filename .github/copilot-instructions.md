@@ -32,6 +32,10 @@ export privately, and optionally publish publicly.
   visual choices to that audience.
 - If the user asks for export, prefer the built-in local export paths:
   `exports/webslides.pdf` and `exports/webslides.pptx`.
+- The PowerPoint export is a hand-built static template in
+  `scripts/export-pptx.mjs`. Do not update it during normal slide add/edit/demo
+  work; use the `update-pptx-export-template` skill only when the user explicitly
+  asks to update PPTX/PowerPoint export parity.
 - If the user asks about publishing or sharing, distinguish private local
   artifacts from public GitHub Pages deployment.
 
@@ -53,6 +57,8 @@ Use the repo skills when they match the task:
 
 - `add-a-slide`: add a new slide or section.
 - `edit-a-slide`: change existing slide copy, layout, behavior, or ordering.
+- `delete-a-slide`: remove an entire slide from the deck cleanly.
 - `integrate-demo-into-slides`: turn an app/demo into a slide.
 - `theming`: re-theme the deck or replace the account logo.
-
+- `update-pptx-export-template`: update the static PowerPoint export builder
+  after the web deck is already correct.

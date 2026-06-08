@@ -61,6 +61,10 @@ DON'T:
 - Steal focus, autoplay audio/video, or run timers/animations while
   `isActive === false`. All slides stay mounted (opacity crossfade), so gate any
   heavy or attention-grabbing side effect behind `isActive`.
+- Do not update `scripts/export-pptx.mjs` or generated files in `exports/` as
+  part of a normal slide add. The native PowerPoint export is a separate static
+  template; use `update-pptx-export-template` only when the user explicitly asks
+  for PPTX parity.
 
 ## Phase 3 — (Optional) Interactive "cycle" cards
 
@@ -110,3 +114,5 @@ These rules prevent the two failure modes that actually break slides:
   has no horizontal overflow at a narrow width.
 - Run `npm run build` to typecheck, then format changed files with
   `npx prettier --write`.
+- Do not run or update the PowerPoint export template unless that was explicitly
+  requested as a separate export-template task.

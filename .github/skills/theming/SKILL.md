@@ -37,7 +37,7 @@ state the palette you derived.
 
 Map the source to this token set. Tokens are **HSL channel triplets**
 (`H S% L%`), consumed as `hsl(var(--token))` — never write `hsl(...)` or hex
-*into* the variable value.
+_into_ the variable value.
 
 Required pairs (each `*-foreground` must stay legible on its base):
 
@@ -68,11 +68,14 @@ DON'T:
 
 - Rename tokens, restructure `:root`, or change `tailwind.config.ts` — the token
   names are the contract every slide depends on. Only edit
-  `tailwind.config.ts` if you are *adding* a brand-new token the user needs.
+  `tailwind.config.ts` if you are _adding_ a brand-new token the user needs.
 - Recolor the intentional semantic signals (the red server-error dot, the green
   health dot) unless the user explicitly asks — they're deliberate, not part of
   the neutral palette.
 - Introduce hardcoded hex/RGB in slide components. All color flows through tokens.
+- Do not update `scripts/export-pptx.mjs` or generated files in `exports/`
+  during normal deck theming. PowerPoint theme parity is a separate static
+  export-template task handled by `update-pptx-export-template`.
 
 If the user wants a dark theme, set the `:root` values to the dark palette
 directly (simplest), or add a `.dark { … }` block mirroring every variable and
@@ -114,7 +117,7 @@ is currently a placeholder.
 - **Logo not mentioned:** don't touch the lockup.
 
 > Respect brand/trademark usage — only use a company's real logo when the user
-> is clearly theming *their own* brand or explicitly requested it. Don't
+> is clearly theming _their own_ brand or explicitly requested it. Don't
 > fabricate a fake version of a real brand's mark.
 
 ## Phase 5 — Verify
@@ -124,5 +127,7 @@ is currently a placeholder.
   new `primary`, and nothing fell back to an unreadable contrast.
 - If you changed `brand-lockup.tsx` or added an asset, run `npm run build` to
   typecheck, then `npx prettier --write` on changed files.
+- Do not run or update the PowerPoint export template unless that was explicitly
+  requested as a separate export-template task.
 - Briefly tell the user the palette you applied (and the logo source, if any) so
   they can fine-tune.

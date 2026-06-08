@@ -47,8 +47,8 @@ export function SlideFrame({
               {eyebrowAdornment}
             </div>
             <div className="ml-auto flex shrink-0 items-center gap-3">
-              <BrandLockup />
               <HelpDialog />
+              <BrandLockup />
             </div>
           </div>
         ) : null}

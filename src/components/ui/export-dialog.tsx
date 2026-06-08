@@ -9,6 +9,9 @@ import { cn } from "@/lib/utils";
 type ExportKind = "pdf" | "pptx" | "pages";
 type ExportBadge = "Static" | "Private" | "Interactive" | "Public";
 
+const pptxSyncPrompt =
+  "Use the update-pptx-export-template skill to sync scripts/export-pptx.mjs with the current web deck before I download PowerPoint. Update only the static PPTX export template and leave exports/ uncommitted.";
+
 const exportOptions: Array<{
   id: ExportKind;
   title: string;
@@ -25,7 +28,7 @@ const exportOptions: Array<{
     id: "pptx",
     title: "PowerPoint",
     badges: ["Static", "Private"],
-    info: "Save a local PowerPoint artifact to exports/webslides.pptx and download it.",
+    info: "Save the hand-built static PowerPoint export to exports/webslides.pptx and download it.",
   },
   {
     id: "pages",
@@ -55,6 +58,66 @@ function ExportIcon() {
   );
 }
 
+function CopyIcon() {
+  return (
+    <svg
+      aria-hidden="true"
+      className="h-4 w-4"
+      fill="none"
+      viewBox="0 0 24 24"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <path
+        d="M8 8V5.75A1.75 1.75 0 0 1 9.75 4h8.5A1.75 1.75 0 0 1 20 5.75v8.5A1.75 1.75 0 0 1 18.25 16H16M5.75 8h8.5A1.75 1.75 0 0 1 16 9.75v8.5A1.75 1.75 0 0 1 14.25 20h-8.5A1.75 1.75 0 0 1 4 18.25v-8.5A1.75 1.75 0 0 1 5.75 8Z"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="2"
+      />
+    </svg>
+  );
+}
+
+function CheckIcon() {
+  return (
+    <svg
+      aria-hidden="true"
+      className="h-4 w-4"
+      fill="none"
+      viewBox="0 0 24 24"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <path
+        d="m5 12.5 4.25 4.25L19 7"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="2.2"
+      />
+    </svg>
+  );
+}
+
+function XIcon() {
+  return (
+    <svg
+      aria-hidden="true"
+      className="h-4 w-4"
+      fill="none"
+      viewBox="0 0 24 24"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <path
+        d="m7 7 10 10M17 7 7 17"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="2.2"
+      />
+    </svg>
+  );
+}
+
 function InfoIcon({ className, info }: { className?: string; info: string }) {
   return (
     <span
@@ -74,9 +137,7 @@ function InfoIcon({ className, info }: { className?: string; info: string }) {
 
 function VisibilityBadge({ label }: { label: ExportBadge }) {
   return (
-    <span
-      className="inline-flex items-center rounded-sm border border-border bg-muted px-2 py-0.5 text-[11px] font-semibold tracking-wide text-muted-foreground"
-    >
+    <span className="inline-flex items-center rounded-sm border border-border bg-muted px-2 py-0.5 text-[11px] font-semibold tracking-wide text-muted-foreground">
       {label}
     </span>
   );
@@ -173,6 +234,7 @@ function FileExportDialogContent({
   buttonLabel,
   exportingLabel,
   filename,
+  note,
   onExport,
   status,
   message,
@@ -180,6 +242,7 @@ function FileExportDialogContent({
   buttonLabel: string;
   exportingLabel: string;
   filename: string;
+  note?: ReactNode;
   onExport: () => void;
   status: "idle" | "exporting" | "success" | "error";
   message: string;
@@ -193,6 +256,11 @@ function FileExportDialogContent({
         </code>
         , and downloads the same file.
       </div>
+      {note ? (
+        <div className="rounded-lg border border-border bg-muted p-4 text-sm leading-6 text-muted-foreground">
+          {note}
+        </div>
+      ) : null}
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
         <Button
           disabled={status === "exporting"}
@@ -217,13 +285,96 @@ function FileExportDialogContent({
   );
 }
 
+function PptxTemplateSyncNote() {
+  const [copyStatus, setCopyStatus] = useState<"idle" | "copied" | "error">(
+    "idle",
+  );
+
+  async function copyPrompt() {
+    function resetStatus() {
+      window.setTimeout(() => setCopyStatus("idle"), 1600);
+    }
+
+    if (!navigator.clipboard?.writeText) {
+      setCopyStatus("error");
+      resetStatus();
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(pptxSyncPrompt);
+      setCopyStatus("copied");
+      resetStatus();
+    } catch {
+      setCopyStatus("error");
+      resetStatus();
+    }
+  }
+
+  const copyLabel =
+    copyStatus === "copied"
+      ? "Prompt copied"
+      : copyStatus === "error"
+        ? "Copy failed"
+        : "Copy PPTX sync prompt";
+
+  return (
+    <>
+      <p className="font-semibold text-foreground">
+        Static export-template step
+      </p>
+      <p className="mt-2">
+        PowerPoint uses{" "}
+        <code className="rounded bg-background px-1.5 py-0.5 text-foreground">
+          scripts/export-pptx.mjs
+        </code>
+        , a curated static builder. Web slide edits do not automatically update
+        it. When PPTX parity matters, ask Copilot to update the PowerPoint
+        export template as a separate step.
+      </p>
+      <div className="mt-4 flex overflow-hidden rounded-md border border-border bg-background">
+        <p className="min-w-0 flex-1 select-text px-3 py-2 font-mono text-xs leading-5 text-foreground">
+          {pptxSyncPrompt}
+        </p>
+        <Button
+          aria-label={copyLabel}
+          className={cn(
+            "min-h-10 w-10 shrink-0 rounded-none border-0 border-l border-border bg-card p-0 hover:bg-muted",
+            copyStatus === "copied" && "text-green-600",
+            copyStatus === "error" && "text-red-600",
+          )}
+          onClick={copyPrompt}
+          size="sm"
+          title={copyLabel}
+          type="button"
+          variant="outline"
+        >
+          <span
+            className="inline-flex animate-in fade-in-0 zoom-in-75 duration-150"
+            key={copyStatus}
+          >
+            {copyStatus === "copied" ? <CheckIcon /> : null}
+            {copyStatus === "error" ? <XIcon /> : null}
+            {copyStatus === "idle" ? <CopyIcon /> : null}
+          </span>
+        </Button>
+      </div>
+      {copyStatus === "error" ? (
+        <p className="mt-2 text-xs leading-5 text-red-600">
+          Copy failed. Select the prompt text and copy it manually.
+        </p>
+      ) : null}
+    </>
+  );
+}
+
 function PagesDialogContent() {
   return (
     <div className="space-y-4">
       <div className="rounded-lg border border-border bg-card p-4 text-sm leading-6 text-muted-foreground">
-        GitHub Pages keeps the deck interactive, but the published URL is public.
-        Use this only for decks with no customer-specific data or local-only demo
-        dependencies.
+        GitHub Pages keeps the deck interactive, but the published URL is
+        public. Use this only for decks with no customer-specific data or
+        local-only demo dependencies.
       </div>
       <ol className="list-decimal space-y-2 pl-5 text-sm leading-6 text-muted-foreground">
         <li>
@@ -292,7 +443,9 @@ export function ExportDialog() {
     }
   }
 
-  const activeOption = exportOptions.find((option) => option.id === activeDialog);
+  const activeOption = exportOptions.find(
+    (option) => option.id === activeDialog,
+  );
 
   return (
     <>
@@ -356,6 +509,7 @@ export function ExportDialog() {
             exportingLabel="Exporting PPTX..."
             filename="webslides.pptx"
             message={pptxMessage}
+            note={<PptxTemplateSyncNote />}
             onExport={handlePptxExport}
             status={pptxStatus}
           />

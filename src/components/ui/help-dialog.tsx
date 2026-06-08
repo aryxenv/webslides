@@ -8,7 +8,7 @@ const controls = [
     keys: ["←", "→"],
     title: "Move through slides",
     description:
-      "Use the arrow keys or the Previous and Next buttons to step through the deck.",
+      "Use left and right arrow keys or the Previous and Next buttons to step through the deck.",
   },
   {
     id: "space",

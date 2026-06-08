@@ -47,7 +47,9 @@ production builds and GitHub Pages.
   full deck, writes `exports/webslides.pdf`, and downloads the same file.
 - **PowerPoint - Static (Private)**: starts the local FastAPI export route,
   generates the native PowerPoint deck, writes `exports/webslides.pptx`, and
-  downloads the same file.
+  downloads the same file. This is a hand-built static template in
+  `scripts/export-pptx.mjs`; web slide edits do not automatically update it.
+  Ask Copilot to update the PowerPoint export template when PPTX parity matters.
 - **GitHub Pages - Interactive (Public)**: use the existing Pages workflow when
   the deck contains no customer-specific data.
 
@@ -93,10 +95,10 @@ follows the matching skill:
 - **Edit a slide**: change copy, layout, styling, or interactions safely.
 - **Integrate demo into slides**: drop in a whole app (in the repo or shared in
   chat) and map it into the deck, wiring up the `server/` backend if needed.
-Slides live in `src/components/slides/<topic>/` and are listed, in order, in
-`src/Presentation.tsx`. Folders are named by topic (not `slide_1`, `slide_2`), so
-slides can be inserted or reordered freely. Demos that need backend logic use the
-FastAPI app in `server/`. The skills cover the details.
+  Slides live in `src/components/slides/<topic>/` and are listed, in order, in
+  `src/Presentation.tsx`. Folders are named by topic (not `slide_1`, `slide_2`), so
+  slides can be inserted or reordered freely. Demos that need backend logic use the
+  FastAPI app in `server/`. The skills cover the details.
 
 ## Share / deploy to GitHub Pages
 
