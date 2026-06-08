@@ -34,7 +34,7 @@ export function PickPolishCustomization({
       eyebrow="Customization system"
       title="Pick, polish, and keep control."
     >
-      <div className="grid grid-cols-1 gap-6 lg:h-full lg:min-h-0 lg:content-center lg:grid-cols-[0.95fr_1.05fr]">
+      <div className="grid grid-cols-1 gap-6 lg:min-h-full lg:content-center lg:grid-cols-[0.95fr_1.05fr]">
         <div className="flex flex-col gap-4">
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
             Shared design system

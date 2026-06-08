@@ -34,7 +34,7 @@ export function WebslidesIntroduction({
       eyebrow="Webslides template"
       title="A slide deck, built like a web app."
     >
-      <div className="grid grid-cols-1 gap-8 lg:h-full lg:min-h-0 lg:content-center lg:grid-cols-[1.1fr_0.9fr] lg:gap-12">
+      <div className="grid grid-cols-1 gap-8 lg:min-h-full lg:content-center lg:grid-cols-[1.1fr_0.9fr] lg:gap-12">
         <div className="flex min-w-0 flex-col gap-5">
           <Badge variant="outline" className="w-fit">
             Template concept

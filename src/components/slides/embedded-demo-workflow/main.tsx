@@ -30,7 +30,7 @@ export function EmbeddedDemoWorkflow({
       eyebrow="Embedded demo workflow"
       title="Demos live inside the presentation."
     >
-      <div className="grid grid-cols-1 gap-6 lg:h-full lg:min-h-0 lg:content-center lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-6 lg:min-h-full lg:content-center lg:grid-cols-2">
         <div className="flex min-w-0 flex-col gap-4">
           <Card
             onClick={() => onSelectCycle(0)}

@@ -43,7 +43,7 @@ export function AgentDrivenAuthoring({
       eyebrow="Agent-driven authoring"
       title="Customize the deck by asking for it."
     >
-      <div className="grid grid-cols-1 gap-6 lg:h-full lg:min-h-0 lg:content-center lg:grid-cols-[0.85fr_1.15fr] lg:gap-8">
+      <div className="grid grid-cols-1 gap-6 lg:min-h-full lg:content-center lg:grid-cols-[0.85fr_1.15fr] lg:gap-8">
         <Card className="flex flex-col overflow-hidden">
           <div className="flex items-center gap-2 border-b border-border px-4 py-3">
             <span className="h-2.5 w-2.5 rounded-full bg-muted-foreground/30" />
