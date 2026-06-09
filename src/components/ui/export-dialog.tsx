@@ -2,12 +2,21 @@ import type { ReactNode } from "react";
 import { useState } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
 import * as Popover from "@radix-ui/react-popover";
-import { describeServerError, exportPdf, exportPptx } from "@/lib/api";
+import {
+  describeServerError,
+  exportEditablePptx,
+  exportImagePptx,
+  exportPdf,
+  isDownloadedExportResult,
+} from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 type ExportKind = "pdf" | "pptx" | "pages" | "azure";
 type ExportBadge = "Static" | "Private" | "Interactive" | "Public" | "Server";
+type ExportStatus = "idle" | "exporting" | "success" | "error";
+
+const savesLocalArtifacts = import.meta.env.DEV;
 
 interface ExportOption {
   id: ExportKind;
@@ -21,13 +30,15 @@ const fileExportOptions: ExportOption[] = [
     id: "pdf",
     title: "PDF",
     badges: ["Static", "Private"],
-    info: "Save a local PDF artifact to exports/webslides.pdf and download it.",
+    info: savesLocalArtifacts
+      ? "Save a local PDF artifact to exports/webslides.pdf and download it."
+      : "Download a PDF without writing to exports/.",
   },
   {
     id: "pptx",
     title: "PowerPoint",
     badges: ["Static", "Private"],
-    info: "Save a local PowerPoint artifact to exports/webslides.pptx and download it.",
+    info: "Choose editable or image-based PowerPoint export.",
   },
 ];
 
@@ -186,6 +197,7 @@ function FileExportDialogContent({
   buttonLabel,
   exportingLabel,
   filename,
+  savesLocalArtifacts,
   onExport,
   status,
   message,
@@ -193,18 +205,35 @@ function FileExportDialogContent({
   buttonLabel: string;
   exportingLabel: string;
   filename: string;
+  savesLocalArtifacts: boolean;
   onExport: () => void;
-  status: "idle" | "exporting" | "success" | "error";
+  status: ExportStatus;
   message: string;
 }) {
   return (
     <div className="space-y-4">
       <div className="rounded-lg border border-border bg-card p-4 text-sm leading-6 text-muted-foreground">
-        Generates the full deck locally, saves it to{" "}
-        <code className="rounded bg-muted px-1.5 py-0.5 text-foreground">
-          exports/{filename}
-        </code>
-        , and downloads the same file.
+        {savesLocalArtifacts ? (
+          <>
+            Generates the full deck locally, saves it to{" "}
+            <code className="rounded bg-muted px-1.5 py-0.5 text-foreground">
+              exports/{filename}
+            </code>
+            , and downloads the same file.
+          </>
+        ) : (
+          <>
+            Generates the full deck and downloads{" "}
+            <code className="rounded bg-muted px-1.5 py-0.5 text-foreground">
+              {filename}
+            </code>{" "}
+            without writing to{" "}
+            <code className="rounded bg-muted px-1.5 py-0.5 text-foreground">
+              exports/
+            </code>
+            .
+          </>
+        )}
       </div>
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
         <Button
@@ -226,6 +255,133 @@ function FileExportDialogContent({
           </p>
         ) : null}
       </div>
+    </div>
+  );
+}
+
+function PptxExportAction({
+  title,
+  description,
+  filename,
+  buttonLabel,
+  exportingLabel,
+  disabled,
+  onExport,
+  status,
+  message,
+  savesLocalArtifacts,
+}: {
+  title: string;
+  description: string;
+  filename: string;
+  buttonLabel: string;
+  exportingLabel: string;
+  disabled: boolean;
+  onExport: () => void;
+  status: ExportStatus;
+  message: string;
+  savesLocalArtifacts: boolean;
+}) {
+  return (
+    <div className="rounded-lg border border-border bg-card p-4">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div className="min-w-0 space-y-2">
+          <h3 className="text-sm font-semibold text-foreground">{title}</h3>
+          <p className="text-sm leading-6 text-muted-foreground">
+            {description}{" "}
+            {savesLocalArtifacts ? (
+              <>
+                Saves to{" "}
+                <code className="rounded bg-muted px-1.5 py-0.5 text-foreground">
+                  exports/{filename}
+                </code>
+                .
+              </>
+            ) : (
+              <>
+                Downloads{" "}
+                <code className="rounded bg-muted px-1.5 py-0.5 text-foreground">
+                  {filename}
+                </code>{" "}
+                without writing to{" "}
+                <code className="rounded bg-muted px-1.5 py-0.5 text-foreground">
+                  exports/
+                </code>
+                .
+              </>
+            )}
+          </p>
+        </div>
+        <Button
+          className="shrink-0"
+          disabled={disabled}
+          onClick={onExport}
+          size="sm"
+          type="button"
+        >
+          {status === "exporting" ? exportingLabel : buttonLabel}
+        </Button>
+      </div>
+      {message ? (
+        <p
+          className={cn(
+            "mt-3 whitespace-pre-wrap text-xs leading-5",
+            status === "error" ? "text-red-600" : "text-muted-foreground",
+          )}
+        >
+          {message}
+        </p>
+      ) : null}
+    </div>
+  );
+}
+
+function PptxExportDialogContent({
+  editableStatus,
+  editableMessage,
+  imageStatus,
+  imageMessage,
+  onEditableExport,
+  onImageExport,
+  savesLocalArtifacts,
+}: {
+  editableStatus: ExportStatus;
+  editableMessage: string;
+  imageStatus: ExportStatus;
+  imageMessage: string;
+  onEditableExport: () => void;
+  onImageExport: () => void;
+  savesLocalArtifacts: boolean;
+}) {
+  const isExporting =
+    editableStatus === "exporting" || imageStatus === "exporting";
+
+  return (
+    <div className="space-y-3">
+      <PptxExportAction
+        buttonLabel="Editable export"
+        description="Creates the hand-built editable PPTX template. Use when you need PowerPoint objects you can modify."
+        disabled={isExporting}
+        exportingLabel="Exporting..."
+        filename="webslides.pptx"
+        message={editableMessage}
+        onExport={onEditableExport}
+        savesLocalArtifacts={savesLocalArtifacts}
+        status={editableStatus}
+        title="Editable export"
+      />
+      <PptxExportAction
+        buttonLabel="Image-based export"
+        description="Creates an image-based PPTX from the live web deck. Use when you need a faithful snapshot."
+        disabled={isExporting}
+        exportingLabel="Exporting..."
+        filename="webslides-img.pptx"
+        message={imageMessage}
+        onExport={onImageExport}
+        savesLocalArtifacts={savesLocalArtifacts}
+        status={imageStatus}
+        title="Image-based export"
+      />
     </div>
   );
 }
@@ -402,10 +558,11 @@ export function ExportDialog() {
     "idle" | "exporting" | "success" | "error"
   >("idle");
   const [pdfMessage, setPdfMessage] = useState("");
-  const [pptxStatus, setPptxStatus] = useState<
-    "idle" | "exporting" | "success" | "error"
-  >("idle");
-  const [pptxMessage, setPptxMessage] = useState("");
+  const [editablePptxStatus, setEditablePptxStatus] =
+    useState<ExportStatus>("idle");
+  const [editablePptxMessage, setEditablePptxMessage] = useState("");
+  const [imagePptxStatus, setImagePptxStatus] = useState<ExportStatus>("idle");
+  const [imagePptxMessage, setImagePptxMessage] = useState("");
 
   function selectDialog(dialog: ExportKind) {
     if (!visibleExportOptions.some((option) => option.id === dialog)) {
@@ -422,28 +579,61 @@ export function ExportDialog() {
     setPdfMessage("");
 
     try {
-      const result = await exportPdf(window.location.origin);
+      const result = await exportPdf(window.location.origin, {
+        downloadOnly: !savesLocalArtifacts,
+      });
       downloadBlob(result.blob, result.filename);
       setPdfStatus("success");
-      setPdfMessage(`Saved and downloaded exports/${result.filename}`);
+      setPdfMessage(
+        savesLocalArtifacts
+          ? `Saved and downloaded exports/${result.filename}`
+          : `Downloaded ${result.filename}`,
+      );
     } catch (error) {
       setPdfStatus("error");
       setPdfMessage(describeServerError(error));
     }
   }
 
-  async function handlePptxExport() {
-    setPptxStatus("exporting");
-    setPptxMessage("");
+  async function handleEditablePptxExport() {
+    setEditablePptxStatus("exporting");
+    setEditablePptxMessage("");
 
     try {
-      const result = await exportPptx(window.location.origin);
-      downloadBlob(result.blob, result.filename);
-      setPptxStatus("success");
-      setPptxMessage(`Saved and downloaded exports/${result.filename}`);
+      const result = await exportEditablePptx(window.location.origin, {
+        downloadOnly: !savesLocalArtifacts,
+      });
+      setEditablePptxStatus("success");
+      if (isDownloadedExportResult(result)) {
+        downloadBlob(result.blob, result.filename);
+        setEditablePptxMessage(`Downloaded ${result.filename}`);
+      } else {
+        setEditablePptxMessage(`Saved ${result.path}`);
+      }
     } catch (error) {
-      setPptxStatus("error");
-      setPptxMessage(describeServerError(error));
+      setEditablePptxStatus("error");
+      setEditablePptxMessage(describeServerError(error));
+    }
+  }
+
+  async function handleImagePptxExport() {
+    setImagePptxStatus("exporting");
+    setImagePptxMessage("");
+
+    try {
+      const result = await exportImagePptx(window.location.origin, {
+        downloadOnly: !savesLocalArtifacts,
+      });
+      setImagePptxStatus("success");
+      if (isDownloadedExportResult(result)) {
+        downloadBlob(result.blob, result.filename);
+        setImagePptxMessage(`Downloaded ${result.filename}`);
+      } else {
+        setImagePptxMessage(`Saved ${result.path}`);
+      }
+    } catch (error) {
+      setImagePptxStatus("error");
+      setImagePptxMessage(describeServerError(error));
     }
   }
 
@@ -505,17 +695,19 @@ export function ExportDialog() {
             filename="webslides.pdf"
             message={pdfMessage}
             onExport={handlePdfExport}
+            savesLocalArtifacts={savesLocalArtifacts}
             status={pdfStatus}
           />
         ) : null}
         {visibleActiveDialog === "pptx" ? (
-          <FileExportDialogContent
-            buttonLabel="Download PPTX"
-            exportingLabel="Exporting PPTX..."
-            filename="webslides.pptx"
-            message={pptxMessage}
-            onExport={handlePptxExport}
-            status={pptxStatus}
+          <PptxExportDialogContent
+            editableMessage={editablePptxMessage}
+            editableStatus={editablePptxStatus}
+            imageMessage={imagePptxMessage}
+            imageStatus={imagePptxStatus}
+            onEditableExport={handleEditablePptxExport}
+            onImageExport={handleImagePptxExport}
+            savesLocalArtifacts={savesLocalArtifacts}
           />
         ) : null}
         {DevDialogContent ? (

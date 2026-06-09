@@ -31,11 +31,14 @@ export privately, and optionally publish publicly.
 - If the user mentions a customer, account, event, or audience, tailor copy and
   visual choices to that audience.
 - If the user asks for export, prefer the built-in local export paths:
-  `exports/webslides.pdf` and `exports/webslides.pptx`.
+  `exports/webslides.pdf`, `exports/webslides.pptx`, and
+  `exports/webslides-img.pptx` for development exports. Production file exports
+  should download to the user's system instead of writing to `exports/`.
 - The PowerPoint export is a hand-built static template in
-  `scripts/export-pptx.mjs`. Do not update it during normal slide add/edit/demo
-  work; use the `update-pptx-export-template` skill only when the user explicitly
-  asks to update PPTX/PowerPoint export parity.
+  `scripts/export-pptx.mjs`; the image PowerPoint export is generated from the
+  live web deck by `scripts/export-pptx-img.mjs`. Do not update either during
+  normal slide add/edit/demo work; use the `update-pptx-export-template` skill
+  only when the user explicitly asks to update PPTX/PowerPoint export parity.
 - If the user asks about publishing or sharing, distinguish private local
   artifacts from public GitHub Pages deployment.
 

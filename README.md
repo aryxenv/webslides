@@ -39,21 +39,23 @@ Available at http://localhost:8000 (no config needed - automatically available o
 
 ## Export locally
 
-The local dev presentation includes an **Export** icon in the footer. It opens a
-popup menu where each option opens its own dialog. The control is hidden from
-production builds and GitHub Pages.
+The presentation includes an **Export** icon in the footer. It opens a popup
+menu where each option opens its own dialog. File exports require the local
+FastAPI server; dev-only deployment options are hidden from production builds.
 
 - **PDF - Static (Private)**: starts the local FastAPI export route, renders the
-  full deck, writes `exports/webslides.pdf`, and downloads the same file.
-- **PowerPoint - Static (Private)**: starts the local FastAPI export route,
-  generates the native PowerPoint deck, writes `exports/webslides.pptx`, and
-  downloads the same file. This is a hand-built static template in
-  `scripts/export-pptx.mjs`; web slide edits do not automatically update it.
-  Ask Copilot to update the PowerPoint export template when PPTX parity matters.
+  full deck, and downloads `webslides.pdf`. In development it also writes
+  `exports/webslides.pdf`.
+- **PowerPoint - Static (Private)**: starts the local FastAPI export route and
+  offers two artifacts. **Editable export** produces the hand-built editable
+  template `webslides.pptx`; web slide edits do not automatically update it.
+  **Image-based export** produces a snapshot of the live web deck as
+  `webslides-img.pptx`. Development writes these to `exports/`;
+  production downloads them to the user's system without writing to `exports/`.
 - **GitHub Pages - Interactive (Public)**: use the existing Pages workflow when
   the deck contains no customer-specific data.
 
-Generated files in `exports/` are ignored by git by default so private PDF/PPTX
+Development files in `exports/` are ignored by git by default so private PDF/PPTX
 artifacts do not get pushed or deployed accidentally.
 
 For PDF and PowerPoint export, run both the client (`npm run dev`) and the server

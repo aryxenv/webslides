@@ -1,13 +1,19 @@
 import { mkdir } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { createRequire } from "node:module";
 import { chromium } from "playwright";
+
+const require = createRequire(import.meta.url);
+const pptxgen = require("pptxgenjs");
 
 const repoRoot = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
   "..",
 );
-const defaultOutput = path.join(repoRoot, "exports", "webslides.pdf");
+const defaultOutput = path.join(repoRoot, "exports", "webslides-img.pptx");
+const slideWidth = 13.333;
+const slideHeight = 7.5;
 const localHosts = new Set(["localhost", "127.0.0.1", "::1", "[::1]"]);
 const fallbackPorts = ["5173", "5174", "5175", "5176"];
 
@@ -82,7 +88,7 @@ async function openExportDeckPage(browser, urls, pageOptions) {
 
   throw new Error(
     [
-      "Could not reach the local web deck for PDF export.",
+      "Could not reach the local web deck for image PPTX export.",
       "Start the client with `npm run dev` and retry.",
       ...errors,
     ].join("\n"),
@@ -166,7 +172,7 @@ async function launchBrowser() {
     } catch (chromiumError) {
       throw new Error(
         [
-          "Could not launch a browser for PDF export.",
+          "Could not launch a browser for image PPTX export.",
           "Install Chromium with `npx playwright install chromium`, or set PLAYWRIGHT_BROWSER_CHANNEL to an installed browser channel.",
           `Edge launch error: ${edgeError instanceof Error ? edgeError.message : String(edgeError)}`,
           `Chromium launch error: ${chromiumError instanceof Error ? chromiumError.message : String(chromiumError)}`,
@@ -185,10 +191,10 @@ await mkdir(path.dirname(outputPath), { recursive: true });
 const browser = await launchBrowser();
 try {
   const page = await openExportDeckPage(browser, exportUrls, {
+    deviceScaleFactor: 2,
     viewport: { width: 1920, height: 1080 },
   });
 
-  await page.emulateMedia({ media: "print" });
   await page.waitForFunction(
     () =>
       window.__webslidesExportReady === true ||
@@ -214,22 +220,43 @@ try {
       }),
     );
   });
-  await waitForExportSettled(page, "PDF");
-  await page.pdf({
-    path: outputPath,
-    width: "13.333in",
-    height: "7.5in",
-    printBackground: true,
-    preferCSSPageSize: true,
-    margin: {
-      top: 0,
-      right: 0,
-      bottom: 0,
-      left: 0,
-    },
+  await waitForExportSettled(page, "Image PPTX");
+
+  const pages = await page.locator(".pdf-export-page").elementHandles();
+  if (pages.length === 0) {
+    throw new Error("No export pages were found for image PPTX export.");
+  }
+
+  const pptx = new pptxgen();
+  pptx.defineLayout({
+    name: "WEB_WIDE",
+    width: slideWidth,
+    height: slideHeight,
   });
+  pptx.layout = "WEB_WIDE";
+  pptx.author = "GitHub Copilot";
+  pptx.company = "Microsoft";
+  pptx.subject = "Webslides image export";
+  pptx.title = "Webslides";
+  pptx.lang = "en-US";
+  pptx.margin = 0;
+
+  for (const slidePage of pages) {
+    const screenshot = await slidePage.screenshot({ type: "png" });
+    const slide = pptx.addSlide();
+    slide.background = { color: "FFFFFF" };
+    slide.addImage({
+      data: `data:image/png;base64,${screenshot.toString("base64")}`,
+      x: 0,
+      y: 0,
+      w: slideWidth,
+      h: slideHeight,
+    });
+  }
+
+  await pptx.writeFile({ fileName: outputPath });
 } finally {
   await browser.close();
 }
 
-console.log(`PDF exported to ${outputPath}`);
+console.log(`Image PPTX exported to ${outputPath}`);

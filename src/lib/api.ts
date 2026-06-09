@@ -13,6 +13,20 @@ export interface FileExportResult {
   filename: string;
 }
 
+export interface SavedExportResult {
+  filename: string;
+  path: string;
+}
+
+export type SavedOrDownloadedExportResult =
+  | SavedExportResult
+  | FileExportResult;
+
+export interface ExportRequestOptions {
+  downloadOnly?: boolean;
+  signal?: AbortSignal;
+}
+
 /** A failed fetch (connection refused / server down) surfaces as a TypeError,
  * unlike an HTTP error response which carries a status message. */
 export function describeServerError(error: unknown): string {
@@ -53,17 +67,30 @@ async function readErrorMessage(response: Response) {
   return text || `Server responded ${response.status}`;
 }
 
+function isJsonResponse(response: Response) {
+  return (response.headers.get("Content-Type") ?? "").includes(
+    "application/json",
+  );
+}
+
+export function isDownloadedExportResult(
+  result: SavedOrDownloadedExportResult,
+): result is FileExportResult {
+  return "blob" in result;
+}
+
 export async function exportPdf(
   url: string,
-  signal?: AbortSignal,
+  options: ExportRequestOptions = {},
 ): Promise<FileExportResult> {
-  const response = await fetch(`${SERVER_URL}/exports/pdf`, {
+  const path = options.downloadOnly ? "/exports/pdf/download" : "/exports/pdf";
+  const response = await fetch(`${SERVER_URL}${path}`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
     },
     body: JSON.stringify({ url }),
-    signal,
+    signal: options.signal,
   });
 
   if (!response.ok) {
@@ -76,25 +103,56 @@ export async function exportPdf(
   };
 }
 
-export async function exportPptx(
+async function exportPptxArtifact(
+  path: string,
+  fallbackFilename: string,
   url: string,
-  signal?: AbortSignal,
-): Promise<FileExportResult> {
-  const response = await fetch(`${SERVER_URL}/exports/pptx`, {
+  options: ExportRequestOptions = {},
+): Promise<SavedOrDownloadedExportResult> {
+  const exportPath = options.downloadOnly ? `${path}/download` : path;
+  const response = await fetch(`${SERVER_URL}${exportPath}`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
     },
     body: JSON.stringify({ url }),
-    signal,
+    signal: options.signal,
   });
 
   if (!response.ok) {
     throw new Error(await readErrorMessage(response));
   }
 
+  if (isJsonResponse(response)) {
+    return (await response.json()) as SavedExportResult;
+  }
+
   return {
     blob: await response.blob(),
-    filename: readFilename(response, "webslides.pptx"),
+    filename: readFilename(response, fallbackFilename),
   };
+}
+
+export async function exportEditablePptx(
+  url: string,
+  options: ExportRequestOptions = {},
+): Promise<SavedOrDownloadedExportResult> {
+  return exportPptxArtifact(
+    "/exports/pptx/editable",
+    "webslides.pptx",
+    url,
+    options,
+  );
+}
+
+export async function exportImagePptx(
+  url: string,
+  options: ExportRequestOptions = {},
+): Promise<SavedOrDownloadedExportResult> {
+  return exportPptxArtifact(
+    "/exports/pptx/image",
+    "webslides-img.pptx",
+    url,
+    options,
+  );
 }
