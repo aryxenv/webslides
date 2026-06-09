@@ -57,7 +57,13 @@ const slides: SlideDefinition[] = [
 ];
 
 const slideIds: readonly string[] = slides.map((slide) => slide.id);
-const showLocalExports = import.meta.env.DEV;
+const localExportHosts = new Set([
+  "localhost",
+  "127.0.0.1",
+  "::1",
+  "[::1]",
+  "0.0.0.0",
+]);
 
 interface CycleState {
   slideId: string;
@@ -66,8 +72,8 @@ interface CycleState {
 
 function isPdfExportMode() {
   return (
-    import.meta.env.DEV &&
-    new URLSearchParams(window.location.search).get("export") === "pdf"
+    new URLSearchParams(window.location.search).get("export") === "pdf" &&
+    localExportHosts.has(window.location.hostname)
   );
 }
 
@@ -248,7 +254,7 @@ function InteractivePresentation() {
       <footer className="z-10 shrink-0 border-t border-border bg-background px-4 py-3 sm:px-6">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
           <div className="flex min-w-0 flex-1 items-center gap-4">
-            {showLocalExports ? <ExportDialog /> : null}
+            <ExportDialog />
             <div className="h-1 flex-1 rounded-sm bg-muted">
               <div
                 className="h-1 rounded-sm bg-primary transition-all duration-500 ease-in-out"

@@ -6,18 +6,17 @@ import { describeServerError, exportPdf, exportPptx } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
-type ExportKind = "pdf" | "pptx" | "pages";
-type ExportBadge = "Static" | "Private" | "Interactive" | "Public";
+type ExportKind = "pdf" | "pptx" | "pages" | "azure";
+type ExportBadge = "Static" | "Private" | "Interactive" | "Public" | "Server";
 
-const pptxSyncPrompt =
-  "Use the update-pptx-export-template skill to sync scripts/export-pptx.mjs with the current web deck before I download PowerPoint. Update only the static PPTX export template and leave exports/ uncommitted.";
-
-const exportOptions: Array<{
+interface ExportOption {
   id: ExportKind;
   title: string;
   badges: ExportBadge[];
   info: string;
-}> = [
+}
+
+const fileExportOptions: ExportOption[] = [
   {
     id: "pdf",
     title: "PDF",
@@ -28,15 +27,28 @@ const exportOptions: Array<{
     id: "pptx",
     title: "PowerPoint",
     badges: ["Static", "Private"],
-    info: "Save the hand-built static PowerPoint export to exports/webslides.pptx and download it.",
-  },
-  {
-    id: "pages",
-    title: "GitHub Pages",
-    badges: ["Interactive", "Public"],
-    info: "Publish the interactive deck with the existing GitHub Actions workflow.",
+    info: "Save a local PowerPoint artifact to exports/webslides.pptx and download it.",
   },
 ];
+
+const devExportOptions: ExportOption[] = import.meta.env.DEV
+  ? [
+      {
+        id: "pages",
+        title: "GitHub Pages",
+        badges: ["Interactive", "Public"],
+        info: "Publish the interactive deck with the existing GitHub Actions workflow.",
+      },
+      {
+        id: "azure",
+        title: "Azure",
+        badges: ["Interactive", "Public", "Server"],
+        info: "Deploy the interactive deck and server-backed demos to Azure with azd.",
+      },
+    ]
+  : [];
+
+const visibleExportOptions = [...fileExportOptions, ...devExportOptions];
 
 function ExportIcon() {
   return (
@@ -53,66 +65,6 @@ function ExportIcon() {
         strokeLinecap="round"
         strokeLinejoin="round"
         strokeWidth="2"
-      />
-    </svg>
-  );
-}
-
-function CopyIcon() {
-  return (
-    <svg
-      aria-hidden="true"
-      className="h-4 w-4"
-      fill="none"
-      viewBox="0 0 24 24"
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      <path
-        d="M8 8V5.75A1.75 1.75 0 0 1 9.75 4h8.5A1.75 1.75 0 0 1 20 5.75v8.5A1.75 1.75 0 0 1 18.25 16H16M5.75 8h8.5A1.75 1.75 0 0 1 16 9.75v8.5A1.75 1.75 0 0 1 14.25 20h-8.5A1.75 1.75 0 0 1 4 18.25v-8.5A1.75 1.75 0 0 1 5.75 8Z"
-        stroke="currentColor"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth="2"
-      />
-    </svg>
-  );
-}
-
-function CheckIcon() {
-  return (
-    <svg
-      aria-hidden="true"
-      className="h-4 w-4"
-      fill="none"
-      viewBox="0 0 24 24"
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      <path
-        d="m5 12.5 4.25 4.25L19 7"
-        stroke="currentColor"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth="2.2"
-      />
-    </svg>
-  );
-}
-
-function XIcon() {
-  return (
-    <svg
-      aria-hidden="true"
-      className="h-4 w-4"
-      fill="none"
-      viewBox="0 0 24 24"
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      <path
-        d="m7 7 10 10M17 7 7 17"
-        stroke="currentColor"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth="2.2"
       />
     </svg>
   );
@@ -234,7 +186,6 @@ function FileExportDialogContent({
   buttonLabel,
   exportingLabel,
   filename,
-  note,
   onExport,
   status,
   message,
@@ -242,7 +193,6 @@ function FileExportDialogContent({
   buttonLabel: string;
   exportingLabel: string;
   filename: string;
-  note?: ReactNode;
   onExport: () => void;
   status: "idle" | "exporting" | "success" | "error";
   message: string;
@@ -256,11 +206,6 @@ function FileExportDialogContent({
         </code>
         , and downloads the same file.
       </div>
-      {note ? (
-        <div className="rounded-lg border border-border bg-muted p-4 text-sm leading-6 text-muted-foreground">
-          {note}
-        </div>
-      ) : null}
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
         <Button
           disabled={status === "exporting"}
@@ -285,114 +230,169 @@ function FileExportDialogContent({
   );
 }
 
-function PptxTemplateSyncNote() {
-  const [copyStatus, setCopyStatus] = useState<"idle" | "copied" | "error">(
-    "idle",
-  );
+type CopyStatus = "idle" | "success" | "error";
 
-  async function copyPrompt() {
-    function resetStatus() {
-      window.setTimeout(() => setCopyStatus("idle"), 1600);
-    }
-
-    if (!navigator.clipboard?.writeText) {
-      setCopyStatus("error");
-      resetStatus();
-      return;
-    }
-
-    try {
-      await navigator.clipboard.writeText(pptxSyncPrompt);
-      setCopyStatus("copied");
-      resetStatus();
-    } catch {
-      setCopyStatus("error");
-      resetStatus();
-    }
-  }
-
-  const copyLabel =
-    copyStatus === "copied"
-      ? "Prompt copied"
-      : copyStatus === "error"
-        ? "Copy failed"
-        : "Copy PPTX sync prompt";
-
+function CopyIcon({ className }: { className?: string }) {
   return (
-    <>
-      <p className="font-semibold text-foreground">
-        Static export-template step
-      </p>
-      <p className="mt-2">
-        PowerPoint uses{" "}
-        <code className="rounded bg-background px-1.5 py-0.5 text-foreground">
-          scripts/export-pptx.mjs
-        </code>
-        , a curated static builder. Web slide edits do not automatically update
-        it. When PPTX parity matters, ask Copilot to update the PowerPoint
-        export template as a separate step.
-      </p>
-      <div className="mt-4 flex overflow-hidden rounded-md border border-border bg-background">
-        <p className="min-w-0 flex-1 select-text px-3 py-2 font-mono text-xs leading-5 text-foreground">
-          {pptxSyncPrompt}
-        </p>
-        <Button
-          aria-label={copyLabel}
-          className={cn(
-            "min-h-10 w-10 shrink-0 rounded-none border-0 border-l border-border bg-card p-0 hover:bg-muted",
-            copyStatus === "copied" && "text-green-600",
-            copyStatus === "error" && "text-red-600",
-          )}
-          onClick={copyPrompt}
-          size="sm"
-          title={copyLabel}
-          type="button"
-          variant="outline"
-        >
-          <span
-            className="inline-flex animate-in fade-in-0 zoom-in-75 duration-150"
-            key={copyStatus}
-          >
-            {copyStatus === "copied" ? <CheckIcon /> : null}
-            {copyStatus === "error" ? <XIcon /> : null}
-            {copyStatus === "idle" ? <CopyIcon /> : null}
-          </span>
-        </Button>
-      </div>
-      {copyStatus === "error" ? (
-        <p className="mt-2 text-xs leading-5 text-red-600">
-          Copy failed. Select the prompt text and copy it manually.
-        </p>
-      ) : null}
-    </>
+    <svg
+      aria-hidden="true"
+      className={className}
+      fill="none"
+      viewBox="0 0 24 24"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <path
+        d="M8 8h10v10H8zM6 16H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"
+        stroke="currentColor"
+        strokeLinejoin="round"
+        strokeWidth="2"
+      />
+    </svg>
   );
 }
 
-function PagesDialogContent() {
+function CheckIcon({ className }: { className?: string }) {
   return (
-    <div className="space-y-4">
-      <div className="rounded-lg border border-border bg-card p-4 text-sm leading-6 text-muted-foreground">
-        GitHub Pages keeps the deck interactive, but the published URL is
-        public. Use this only for decks with no customer-specific data or
-        local-only demo dependencies.
+    <svg
+      aria-hidden="true"
+      className={className}
+      fill="none"
+      viewBox="0 0 24 24"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <path
+        d="m5 12 4 4L19 6"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="2"
+      />
+    </svg>
+  );
+}
+
+function XIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      aria-hidden="true"
+      className={className}
+      fill="none"
+      viewBox="0 0 24 24"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <path
+        d="m7 7 10 10M17 7 7 17"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeWidth="2"
+      />
+    </svg>
+  );
+}
+
+function CopyStatusIcon({ status }: { status: CopyStatus }) {
+  const iconClassName = "h-4 w-4 animate-in fade-in-0 zoom-in-75 duration-150";
+
+  if (status === "success") {
+    return <CheckIcon className={cn(iconClassName, "text-green-600")} />;
+  }
+
+  if (status === "error") {
+    return <XIcon className={cn(iconClassName, "text-red-600")} />;
+  }
+
+  return <CopyIcon className={iconClassName} />;
+}
+
+function CommandBlock({ command, label }: { command: string; label: string }) {
+  const [copyStatus, setCopyStatus] = useState<CopyStatus>("idle");
+
+  async function copyCommand() {
+    try {
+      await navigator.clipboard.writeText(command);
+      setCopyStatus("success");
+    } catch {
+      setCopyStatus("error");
+    }
+
+    window.setTimeout(() => setCopyStatus("idle"), 1600);
+  }
+
+  return (
+    <div className="space-y-2">
+      <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+        {label}
+      </p>
+      <div className="relative">
+        <pre className="overflow-x-auto rounded-lg border border-border bg-muted py-3 pl-3 pr-12 text-xs leading-5 text-foreground">
+          <code>{command}</code>
+        </pre>
+        <Button
+          aria-label={`Copy ${label}`}
+          className="absolute right-2 top-1/2 h-8 w-8 -translate-y-1/2 p-0"
+          onClick={copyCommand}
+          size="sm"
+          type="button"
+          variant="quiet"
+        >
+          <CopyStatusIcon key={copyStatus} status={copyStatus} />
+        </Button>
       </div>
-      <ol className="list-decimal space-y-2 pl-5 text-sm leading-6 text-muted-foreground">
-        <li>
-          In GitHub, set <strong>Settings → Pages</strong> source to{" "}
-          <strong>GitHub Actions</strong>.
-        </li>
-        <li>Push changes to main so the existing Pages workflow runs.</li>
-        <li>
-          Share{" "}
-          <code className="rounded bg-muted px-1.5 py-0.5 text-foreground">
-            https://&lt;owner&gt;.github.io/&lt;repo&gt;/
-          </code>
-          .
-        </li>
-      </ol>
     </div>
   );
 }
+
+const DevDialogContent = import.meta.env.DEV
+  ? function DevDialogContent({ dialog }: { dialog: ExportKind | null }) {
+      if (dialog === "pages") {
+        return (
+          <div className="space-y-4">
+            <div className="rounded-lg border border-border bg-card p-4 text-sm leading-6 text-muted-foreground">
+              GitHub Pages keeps the deck interactive, but the published URL is
+              public. Use this only for decks with no customer-specific data or
+              local-only demo dependencies.
+            </div>
+            <ol className="list-decimal space-y-2 pl-5 text-sm leading-6 text-muted-foreground">
+              <li>
+                In GitHub, set <strong>Settings → Pages</strong> source to{" "}
+                <strong>GitHub Actions</strong>.
+              </li>
+              <li>Push changes to main so the existing Pages workflow runs.</li>
+              <li>
+                Share{" "}
+                <code className="rounded bg-muted px-1.5 py-0.5 text-foreground">
+                  https://&lt;owner&gt;.github.io/&lt;repo&gt;/
+                </code>
+                .
+              </li>
+            </ol>
+          </div>
+        );
+      }
+
+      if (dialog === "azure") {
+        return (
+          <div className="space-y-4">
+            <div className="rounded-lg border border-border bg-card p-4 text-sm leading-6 text-muted-foreground">
+              From the repo root, run{" "}
+              <code className="rounded bg-muted px-1.5 py-0.5 text-foreground">
+                azd up
+              </code>
+              . That provisions the Foundry models, deploys the FastAPI backend,
+              and publishes the interactive deck to Azure Static Web Apps.
+            </div>
+            <CommandBlock command="azd up" label="Deploy from repo root" />
+            <CommandBlock
+              command="npm run azure:url"
+              label="After azd up finishes, print the Static Web App URL"
+            />
+          </div>
+        );
+      }
+
+      return null;
+    }
+  : null;
 
 export function ExportDialog() {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -408,6 +408,10 @@ export function ExportDialog() {
   const [pptxMessage, setPptxMessage] = useState("");
 
   function selectDialog(dialog: ExportKind) {
+    if (!visibleExportOptions.some((option) => option.id === dialog)) {
+      return;
+    }
+
     setMenuOpen(false);
     setActiveDialog(dialog);
     setDialogOpen(true);
@@ -443,9 +447,10 @@ export function ExportDialog() {
     }
   }
 
-  const activeOption = exportOptions.find(
+  const activeOption = visibleExportOptions.find(
     (option) => option.id === activeDialog,
   );
+  const visibleActiveDialog = activeOption ? activeDialog : null;
 
   return (
     <>
@@ -469,7 +474,7 @@ export function ExportDialog() {
             sideOffset={10}
           >
             <div className="grid gap-1">
-              {exportOptions.map((option) => (
+              {visibleExportOptions.map((option) => (
                 <ExportMenuOption
                   key={option.id}
                   badges={option.badges}
@@ -493,7 +498,7 @@ export function ExportDialog() {
         open={dialogOpen}
         title={activeOption?.title ?? "Export"}
       >
-        {activeDialog === "pdf" ? (
+        {visibleActiveDialog === "pdf" ? (
           <FileExportDialogContent
             buttonLabel="Download PDF"
             exportingLabel="Exporting PDF..."
@@ -503,18 +508,19 @@ export function ExportDialog() {
             status={pdfStatus}
           />
         ) : null}
-        {activeDialog === "pptx" ? (
+        {visibleActiveDialog === "pptx" ? (
           <FileExportDialogContent
             buttonLabel="Download PPTX"
             exportingLabel="Exporting PPTX..."
             filename="webslides.pptx"
             message={pptxMessage}
-            note={<PptxTemplateSyncNote />}
             onExport={handlePptxExport}
             status={pptxStatus}
           />
         ) : null}
-        {activeDialog === "pages" ? <PagesDialogContent /> : null}
+        {DevDialogContent ? (
+          <DevDialogContent dialog={visibleActiveDialog} />
+        ) : null}
       </DialogShell>
     </>
   );
