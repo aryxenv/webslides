@@ -1,3 +1,4 @@
+import os
 import shutil
 import subprocess
 import tempfile
@@ -17,6 +18,7 @@ PDF_PATH = EXPORTS_DIR / "webslides.pdf"
 EDITABLE_PPTX_PATH = EXPORTS_DIR / "webslides.pptx"
 IMAGE_PPTX_PATH = EXPORTS_DIR / "webslides-img.pptx"
 LOCAL_HOSTS = {"localhost", "127.0.0.1", "::1", "0.0.0.0"}
+EXPORT_ALLOWED_HOSTS_ENV = "WEBSLIDES_EXPORT_ALLOWED_HOSTS"
 PDF_MEDIA_TYPE = "application/pdf"
 PPTX_MEDIA_TYPE = (
     "application/vnd.openxmlformats-officedocument.presentationml.presentation"
@@ -27,12 +29,37 @@ class LocalExportRequest(BaseModel):
     url: str
 
 
-def ensure_local_url(url: str) -> str:
+def get_allowed_export_hosts() -> set[str]:
+    allowed_hosts = set(LOCAL_HOSTS)
+    configured_hosts = os.getenv(EXPORT_ALLOWED_HOSTS_ENV, "")
+
+    for value in configured_hosts.split(","):
+        value = value.strip()
+        if not value:
+            continue
+
+        parsed = urlparse(value if "://" in value else f"https://{value}")
+        if not parsed.hostname:
+            raise HTTPException(
+                status_code=500,
+                detail=f"{EXPORT_ALLOWED_HOSTS_ENV} contains an invalid host: {value}",
+            )
+
+        allowed_hosts.add(parsed.hostname.lower())
+
+    return allowed_hosts
+
+
+def ensure_export_url(url: str) -> str:
     parsed = urlparse(url)
-    if parsed.scheme not in {"http", "https"} or parsed.hostname not in LOCAL_HOSTS:
+    hostname = parsed.hostname.lower() if parsed.hostname else ""
+    if (
+        parsed.scheme not in {"http", "https"}
+        or hostname not in get_allowed_export_hosts()
+    ):
         raise HTTPException(
             status_code=400,
-            detail="Local exports can only render a local development URL.",
+            detail="Exports can only render a local development URL or a configured hosted deck URL.",
         )
 
     return url
@@ -50,7 +77,7 @@ def run_npm_export(
     if not npm:
         raise HTTPException(
             status_code=500,
-            detail=f"npm was not found on PATH, so the local {export_label} export could not run.",
+            detail=f"npm was not found on PATH, so the {export_label} export could not run.",
         )
 
     try:
@@ -74,7 +101,7 @@ def run_npm_export(
     except subprocess.TimeoutExpired as error:
         raise HTTPException(
             status_code=504,
-            detail=f"{export_label} export timed out while rendering the local deck.",
+            detail=f"{export_label} export timed out while rendering the deck.",
         ) from error
 
     if completed.returncode != 0:
@@ -137,7 +164,7 @@ def downloadable_export_response(
 
 @router.post("/pdf")
 def export_pdf(request: LocalExportRequest):
-    url = ensure_local_url(request.url)
+    url = ensure_export_url(request.url)
     run_npm_export(
         script_name="export:pdf",
         url=url,
@@ -154,7 +181,7 @@ def export_pdf(request: LocalExportRequest):
 
 @router.post("/pdf/download")
 def download_pdf(request: LocalExportRequest):
-    url = ensure_local_url(request.url)
+    url = ensure_export_url(request.url)
     return downloadable_export_response(
         filename=PDF_PATH.name,
         media_type=PDF_MEDIA_TYPE,
@@ -171,7 +198,7 @@ def export_pptx(request: LocalExportRequest):
 
 @router.post("/pptx/editable")
 def export_editable_pptx(request: LocalExportRequest):
-    url = ensure_local_url(request.url)
+    url = ensure_export_url(request.url)
     run_npm_export(
         script_name="export:pptx",
         url=url,
@@ -184,7 +211,7 @@ def export_editable_pptx(request: LocalExportRequest):
 
 @router.post("/pptx/editable/download")
 def download_editable_pptx(request: LocalExportRequest):
-    url = ensure_local_url(request.url)
+    url = ensure_export_url(request.url)
     return downloadable_export_response(
         filename=EDITABLE_PPTX_PATH.name,
         media_type=PPTX_MEDIA_TYPE,
@@ -196,7 +223,7 @@ def download_editable_pptx(request: LocalExportRequest):
 
 @router.post("/pptx/image")
 def export_image_pptx(request: LocalExportRequest):
-    url = ensure_local_url(request.url)
+    url = ensure_export_url(request.url)
     run_npm_export(
         script_name="export:pptx-img",
         url=url,
@@ -210,7 +237,7 @@ def export_image_pptx(request: LocalExportRequest):
 
 @router.post("/pptx/image/download")
 def download_image_pptx(request: LocalExportRequest):
-    url = ensure_local_url(request.url)
+    url = ensure_export_url(request.url)
     return downloadable_export_response(
         filename=IMAGE_PPTX_PATH.name,
         media_type=PPTX_MEDIA_TYPE,

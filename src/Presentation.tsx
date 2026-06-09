@@ -3,6 +3,7 @@ import { useCallback, useEffect, useState } from "react";
 import { AgentDrivenAuthoring } from "@/components/slides/agent-driven-authoring/main";
 import { EmbeddedDemoWorkflow } from "@/components/slides/embedded-demo-workflow/main";
 import { PickPolishCustomization } from "@/components/slides/pick-polish-customization/main";
+import { Sharing } from "@/components/slides/sharing/main";
 import { WebslidesIntroduction } from "@/components/slides/webslides-introduction/main";
 import type { SlideProps } from "@/components/slides/types";
 import { Button } from "@/components/ui/button";
@@ -54,16 +55,15 @@ const slides: SlideDefinition[] = [
     Component: PickPolishCustomization,
     cycleItems: 3,
   },
+  {
+    id: "sharing",
+    label: "Sharing",
+    Component: Sharing,
+    cycleItems: 2,
+  },
 ];
 
 const slideIds: readonly string[] = slides.map((slide) => slide.id);
-const localExportHosts = new Set([
-  "localhost",
-  "127.0.0.1",
-  "::1",
-  "[::1]",
-  "0.0.0.0",
-]);
 
 interface CycleState {
   slideId: string;
@@ -71,10 +71,7 @@ interface CycleState {
 }
 
 function isPdfExportMode() {
-  return (
-    new URLSearchParams(window.location.search).get("export") === "pdf" &&
-    localExportHosts.has(window.location.hostname)
-  );
+  return new URLSearchParams(window.location.search).get("export") === "pdf";
 }
 
 function useHideAppLoader() {
@@ -137,6 +134,13 @@ function PdfExportPresentation() {
 function InteractivePresentation() {
   useHideAppLoader();
 
+  const [cycleState, setCycleState] = useState<CycleState>({
+    slideId: "",
+    index: 0,
+  });
+  const resetCycleState = useCallback(() => {
+    setCycleState({ slideId: "", index: 0 });
+  }, []);
   const {
     activeIndex,
     canGoNext,
@@ -144,11 +148,7 @@ function InteractivePresentation() {
     nextSlide,
     previousSlide,
     progress,
-  } = usePresentationNavigation(slideIds);
-  const [cycleState, setCycleState] = useState<CycleState>({
-    slideId: "",
-    index: 0,
-  });
+  } = usePresentationNavigation(slideIds, { onNavigate: resetCycleState });
   const activeSlide = slides[activeIndex];
   const activeSlideId = activeSlide?.id ?? "";
   const cycleCount = activeSlide?.cycleItems ?? 0;
@@ -187,14 +187,6 @@ function InteractivePresentation() {
     onSwipeLeft: nextSlide,
     onSwipeRight: previousSlide,
   });
-
-  useEffect(() => {
-    if (!activeSlideId) {
-      return;
-    }
-
-    setCycleState({ slideId: activeSlideId, index: 0 });
-  }, [activeSlideId]);
 
   useEffect(() => {
     function handleSpacebar(event: KeyboardEvent) {

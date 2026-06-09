@@ -1,6 +1,21 @@
-/** Base URL of the demo server. Defaults to the local FastAPI dev server;
- * override per-environment with VITE_SERVER_URL (e.g. in .env.local). */
-const serverUrl = import.meta.env.VITE_SERVER_URL ?? "http://localhost:8000";
+declare global {
+  interface Window {
+    __WEBSLIDES_CONFIG__?: {
+      serverUrl?: string;
+    };
+  }
+}
+
+/** Base URL of the demo server. Runtime config is used in hosted containers;
+ * VITE_SERVER_URL remains available for local environment overrides. */
+const runtimeServerUrl =
+  typeof window === "undefined"
+    ? undefined
+    : window.__WEBSLIDES_CONFIG__?.serverUrl;
+const serverUrl =
+  runtimeServerUrl ??
+  import.meta.env.VITE_SERVER_URL ??
+  (import.meta.env.DEV ? "http://localhost:8000" : "");
 
 export const SERVER_URL = serverUrl.replace(/\/$/, "");
 

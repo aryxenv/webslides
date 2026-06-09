@@ -719,6 +719,101 @@ function slidePolish() {
   });
 }
 
+function slideSharing() {
+  const slide = pptx.addSlide();
+  addHeader(slide, "Sharing", "Choose the right door out of the deck.", 1.06);
+
+  addBadge(slide, "Team story, audience artifact", 0.39, 2.72, 1.55, "outline");
+  addCardText(
+    slide,
+    "One deck, two ways out: a workshop for makers and a package for everyone else.",
+    0.39,
+    3.12,
+    4.35,
+    0.76,
+    { fontSize: 21, bold: true },
+  );
+  addCardText(
+    slide,
+    "Use GitHub while the story is still changing. Reach for an export when it is ready to leave the room.",
+    0.39,
+    4.18,
+    4.1,
+    0.48,
+    { fontSize: 10.5, color: C.mutedText },
+  );
+
+  addRoundRect(slide, 5.25, 2.52, 7.7, 1.24, {
+    line: C.fg,
+    width: 1.25,
+  });
+  addCardText(slide, "GitHub \u00b7 the shared workshop", 5.48, 2.8, 3.1, 0.16, {
+    fontSize: 12.5,
+    bold: true,
+  });
+  addBadge(slide, "Collaborate", 11.95, 2.76, 0.75, "dark");
+  addCardText(
+    slide,
+    "Keep the deck, demos, and edits in one place \u2014 for teams building the story together.",
+    5.48,
+    3.13,
+    5.4,
+    0.18,
+    { fontSize: 8.4, color: C.mutedText },
+  );
+  ["Branches", "Pull requests", "Reviewable history"].forEach((trait, index) => {
+    addBadge(slide, trait, 5.48 + index * 0.96, 3.43, 0.82, "muted");
+  });
+
+  addRoundRect(slide, 5.25, 4.0, 7.7, 2.62, {
+    line: C.border,
+    width: 0.9,
+  });
+  addCardText(slide, "Export \u00b7 the channel picker", 5.48, 4.26, 2.8, 0.16, {
+    fontSize: 12.5,
+    bold: true,
+  });
+  addBadge(slide, "Distribute", 12.02, 4.22, 0.68, "outline");
+  addCardText(
+    slide,
+    "Pick the format that matches how the deck should travel \u2014 for sharing with everyone else.",
+    5.48,
+    4.58,
+    5.25,
+    0.18,
+    { fontSize: 8.4, color: C.mutedText },
+  );
+
+  [
+    ["PDF", "The quick readout that travels anywhere.", "Light \u00b7 Fast \u00b7 Reliable"],
+    ["PowerPoint", "A traditional deck with the full Microsoft toolkit.", "Microsoft integrated"],
+    ["GitHub Pages", "A hosted, public demo for generic slides.", "Hosted \u00b7 Public"],
+    ["Azure", "A hosted, public demo with a live server behind it.", "Server \u00b7 IaC"],
+  ].forEach(([name, detail, traits], index) => {
+    const col = index % 2;
+    const row = Math.floor(index / 2);
+    const x = 5.48 + col * 3.58;
+    const y = 4.98 + row * 0.73;
+    addRoundRect(slide, x, y, 3.32, 0.58, {
+      fill: C.bg,
+      line: C.border,
+      width: 0.65,
+    });
+    addCardText(slide, name, x + 0.13, y + 0.11, 1.2, 0.13, {
+      fontSize: 8.8,
+      bold: true,
+    });
+    addCardText(slide, detail, x + 0.13, y + 0.3, 2.6, 0.1, {
+      fontSize: 6.3,
+      color: C.mutedText,
+    });
+    addCardText(slide, traits, x + 0.13, y + 0.44, 2.4, 0.08, {
+      fontSize: 5.8,
+      color: C.mutedText,
+    });
+  });
+}
+
 const outputPath = resolveOutput(readOption("--output", defaultOutput));
 await mkdir(path.dirname(outputPath), { recursive: true });
 
@@ -726,6 +821,7 @@ slideIntro();
 slideAuthoring();
 slideEmbeddedDemo();
 slidePolish();
+slideSharing();
 
 await pptx.writeFile({ fileName: outputPath });
 await cleanPptxPackage(outputPath);

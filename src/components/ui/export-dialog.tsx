@@ -56,7 +56,7 @@ const devExportOptions: ExportOption[] = import.meta.env.DEV
         id: "azure",
         title: "Azure",
         badges: ["Interactive", "Public", "Server"],
-        info: "Deploy the interactive deck and server-backed demos to Azure with azd.",
+        info: "Deploy the interactive deck and FastAPI server to Azure with azd.",
       },
     ]
   : [];
@@ -619,13 +619,14 @@ const DevDialogContent = import.meta.env.DEV
               <code className="rounded bg-muted px-1.5 py-0.5 text-foreground">
                 azd up
               </code>
-              . That provisions the Foundry models, deploys the FastAPI backend,
-              and publishes the interactive deck to Azure Static Web Apps.
+              . That deploys the interactive deck and FastAPI backend as
+              separate Azure Container Apps in Sweden Central with fixed 1/1
+              replicas and a built-in ACR role propagation wait.
             </div>
             <CommandBlock command="azd up" label="Deploy from repo root" />
             <CommandBlock
               command="npm run azure:url"
-              label="After azd up finishes, print the Static Web App URL"
+              label="After azd up finishes, print the frontend Container App URL"
             />
           </div>
         );

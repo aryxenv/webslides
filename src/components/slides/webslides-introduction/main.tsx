@@ -40,8 +40,7 @@ export function WebslidesIntroduction({
             Template concept
           </Badge>
           <p className="text-2xl font-semibold leading-tight tracking-[-0.03em] sm:text-3xl lg:text-4xl">
-            Put demos, data, and live components directly in the story you
-            present.
+            Demos, data, and live components directly in the story you present.
           </p>
           <p className="max-w-xl text-base leading-7 text-muted-foreground">
             The deck is React, Tailwind, and your own component system. If it

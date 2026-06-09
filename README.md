@@ -62,6 +62,32 @@ For PDF and PowerPoint export, run both the client (`npm run dev`) and the serve
 (`uv run fastapi dev`) locally. Download buttons are disabled while the server is
 unreachable.
 
+## Deploy to Azure
+
+The template includes an Azure Developer CLI (`azd`) deployment path for the
+interactive deck plus the FastAPI server used by demos and file exports:
+
+```pwsh
+azd up
+```
+
+This deploys the Vite deck and the FastAPI backend as two Azure Container Apps.
+Both apps are pinned to one minimum and one maximum replica. A built-in
+predeploy hook waits for the Container App identities to receive `AcrPull` on
+the template ACR before the app images roll out.
+
+After deployment, print the hosted deck URL with:
+
+```pwsh
+npm run azure:url
+```
+
+By default, `azd` deploys both Container Apps, ACR, and Log Analytics to Sweden
+Central. The backend container explicitly uses Node.js 24 for the npm-based PDF
+and PowerPoint export scripts. Hosted exports are restricted to local
+development URLs or the deployed frontend Container App hostname configured by
+`azd`.
+
 PDF export uses Playwright. It first tries the local Microsoft Edge browser; if
 that is unavailable, install Playwright's browser with:
 
@@ -125,7 +151,8 @@ or share a specific slide, e.g. `https://<owner>.github.io/<repo>/?slide=embedde
 > [!NOTE]
 > GitHub Pages is static, so the FastAPI `server/` demo only runs locally.
 > The live server-call card will show "server unavailable" on the deployed deck
-> unless you point `VITE_SERVER_URL` at a publicly hosted server.
+> unless you point `VITE_SERVER_URL` at a publicly hosted server, such as the
+> Azure Container Apps backend.
 
 ## Customize the design system
 

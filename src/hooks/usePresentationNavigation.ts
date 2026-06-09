@@ -5,6 +5,10 @@ const slideNavigationKeys = new Set(["ArrowRight", "ArrowLeft"]);
 
 const SLIDE_PARAM = "slide";
 
+interface PresentationNavigationOptions {
+  onNavigate?: () => void;
+}
+
 function readIndexFromUrl(slideIds: readonly string[]): number {
   if (typeof window === "undefined") {
     return 0;
@@ -15,32 +19,37 @@ function readIndexFromUrl(slideIds: readonly string[]): number {
   return index >= 0 ? index : 0;
 }
 
-export function usePresentationNavigation(slideIds: readonly string[]) {
+export function usePresentationNavigation(
+  slideIds: readonly string[],
+  options: PresentationNavigationOptions = {},
+) {
   const slideCount = slideIds.length;
+  const onNavigate = options.onNavigate;
   const [activeIndex, setActiveIndex] = useState(() =>
     readIndexFromUrl(slideIds),
   );
+  const boundedActiveIndex = Math.min(activeIndex, Math.max(slideCount - 1, 0));
 
   const previousSlide = useCallback(() => {
+    onNavigate?.();
     setActiveIndex((current) =>
-      slideCount === 0 ? 0 : (current - 1 + slideCount) % slideCount,
+      slideCount === 0
+        ? 0
+        : (Math.min(current, slideCount - 1) - 1 + slideCount) % slideCount,
     );
-  }, [slideCount]);
+  }, [onNavigate, slideCount]);
 
   const nextSlide = useCallback(() => {
+    onNavigate?.();
     setActiveIndex((current) =>
-      slideCount === 0 ? 0 : (current + 1) % slideCount,
+      slideCount === 0 ? 0 : (Math.min(current, slideCount - 1) + 1) % slideCount,
     );
-  }, [slideCount]);
-
-  useEffect(() => {
-    setActiveIndex((current) => Math.min(current, Math.max(slideCount - 1, 0)));
-  }, [slideCount]);
+  }, [onNavigate, slideCount]);
 
   // Reflect the active slide in the URL (?slide=<id>) so refreshing returns to
   // the same slide and the link can be shared.
   useEffect(() => {
-    const id = slideIds[activeIndex];
+    const id = slideIds[boundedActiveIndex];
     if (!id) {
       return;
     }
@@ -57,17 +66,18 @@ export function usePresentationNavigation(slideIds: readonly string[]) {
       "",
       `${window.location.pathname}?${query}${window.location.hash}`,
     );
-  }, [activeIndex, slideIds]);
+  }, [boundedActiveIndex, slideIds]);
 
   // Respond to back/forward navigation and manual URL edits.
   useEffect(() => {
     function handlePopState() {
+      onNavigate?.();
       setActiveIndex(readIndexFromUrl(slideIds));
     }
 
     window.addEventListener("popstate", handlePopState);
     return () => window.removeEventListener("popstate", handlePopState);
-  }, [slideIds]);
+  }, [onNavigate, slideIds]);
 
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
@@ -95,13 +105,13 @@ export function usePresentationNavigation(slideIds: readonly string[]) {
 
   return useMemo(
     () => ({
-      activeIndex,
+      activeIndex: boundedActiveIndex,
       canGoNext: slideCount > 1,
       canGoPrevious: slideCount > 1,
       nextSlide,
       previousSlide,
-      progress: slideCount === 0 ? 0 : (activeIndex + 1) / slideCount,
+      progress: slideCount === 0 ? 0 : (boundedActiveIndex + 1) / slideCount,
     }),
-    [activeIndex, nextSlide, previousSlide, slideCount],
+    [boundedActiveIndex, nextSlide, previousSlide, slideCount],
   );
 }
