@@ -18,7 +18,7 @@ two local export artifacts:
 
 The development export UI saves these artifacts under `exports/`. The production
 export UI downloads the same files to the user's system from temporary server
-artifacts instead of writing to `exports/`.
+artifacts.
 
 This skill exists so PPTX parity work happens only when the user explicitly asks
 for it. Unless the user scopes the request to one variant, update/generate both

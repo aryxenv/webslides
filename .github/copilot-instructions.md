@@ -33,7 +33,7 @@ export privately, and optionally publish publicly.
 - If the user asks for export, prefer the built-in local export paths:
   `exports/webslides.pdf`, `exports/webslides.pptx`, and
   `exports/webslides-img.pptx` for development exports. Production file exports
-  should download to the user's system instead of writing to `exports/`.
+  should download to the user's system.
 - The PowerPoint export is a hand-built static template in
   `scripts/export-pptx.mjs`; the image PowerPoint export is generated from the
   live web deck by `scripts/export-pptx-img.mjs`. Do not update either during

@@ -50,8 +50,8 @@ FastAPI server; dev-only deployment options are hidden from production builds.
   offers two artifacts. **Editable export** produces the hand-built editable
   template `webslides.pptx`; web slide edits do not automatically update it.
   **Image-based export** produces a snapshot of the live web deck as
-  `webslides-img.pptx`. Development writes these to `exports/`;
-  production downloads them to the user's system without writing to `exports/`.
+  `webslides-img.pptx`. Development writes these to `exports/`; production
+  downloads them to the user's system.
 - **GitHub Pages - Interactive (Public)**: use the existing Pages workflow when
   the deck contains no customer-specific data.
 
@@ -59,7 +59,8 @@ Development files in `exports/` are ignored by git by default so private PDF/PPT
 artifacts do not get pushed or deployed accidentally.
 
 For PDF and PowerPoint export, run both the client (`npm run dev`) and the server
-(`uv run fastapi dev`) locally.
+(`uv run fastapi dev`) locally. Download buttons are disabled while the server is
+unreachable.
 
 PDF export uses Playwright. It first tries the local Microsoft Edge browser; if
 that is unavailable, install Playwright's browser with:

@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import * as Dialog from "@radix-ui/react-dialog";
 import * as Popover from "@radix-ui/react-popover";
 import {
@@ -7,7 +8,9 @@ import {
   exportEditablePptx,
   exportImagePptx,
   exportPdf,
+  fetchHealth,
   isDownloadedExportResult,
+  SERVER_URL,
 } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -32,7 +35,7 @@ const fileExportOptions: ExportOption[] = [
     badges: ["Static", "Private"],
     info: savesLocalArtifacts
       ? "Save a local PDF artifact to exports/webslides.pdf and download it."
-      : "Download a PDF without writing to exports/.",
+      : "Download a PDF.",
   },
   {
     id: "pptx",
@@ -195,6 +198,7 @@ function DialogShell({
 
 function FileExportDialogContent({
   buttonLabel,
+  disabled,
   exportingLabel,
   filename,
   savesLocalArtifacts,
@@ -203,6 +207,7 @@ function FileExportDialogContent({
   message,
 }: {
   buttonLabel: string;
+  disabled: boolean;
   exportingLabel: string;
   filename: string;
   savesLocalArtifacts: boolean;
@@ -226,10 +231,6 @@ function FileExportDialogContent({
             Generates the full deck and downloads{" "}
             <code className="rounded bg-muted px-1.5 py-0.5 text-foreground">
               {filename}
-            </code>{" "}
-            without writing to{" "}
-            <code className="rounded bg-muted px-1.5 py-0.5 text-foreground">
-              exports/
             </code>
             .
           </>
@@ -237,7 +238,7 @@ function FileExportDialogContent({
       </div>
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
         <Button
-          disabled={status === "exporting"}
+          disabled={disabled || status === "exporting"}
           onClick={onExport}
           size="sm"
           type="button"
@@ -302,10 +303,6 @@ function PptxExportAction({
                 Downloads{" "}
                 <code className="rounded bg-muted px-1.5 py-0.5 text-foreground">
                   {filename}
-                </code>{" "}
-                without writing to{" "}
-                <code className="rounded bg-muted px-1.5 py-0.5 text-foreground">
-                  exports/
                 </code>
                 .
               </>
@@ -343,6 +340,7 @@ function PptxExportDialogContent({
   imageMessage,
   onEditableExport,
   onImageExport,
+  serverReady,
   savesLocalArtifacts,
 }: {
   editableStatus: ExportStatus;
@@ -351,17 +349,19 @@ function PptxExportDialogContent({
   imageMessage: string;
   onEditableExport: () => void;
   onImageExport: () => void;
+  serverReady: boolean;
   savesLocalArtifacts: boolean;
 }) {
   const isExporting =
     editableStatus === "exporting" || imageStatus === "exporting";
+  const disabled = isExporting || !serverReady;
 
   return (
     <div className="space-y-3">
       <PptxExportAction
         buttonLabel="Editable export"
         description="Creates the hand-built editable PPTX template. Use when you need PowerPoint objects you can modify."
-        disabled={isExporting}
+        disabled={disabled}
         exportingLabel="Exporting..."
         filename="webslides.pptx"
         message={editableMessage}
@@ -373,7 +373,7 @@ function PptxExportDialogContent({
       <PptxExportAction
         buttonLabel="Image-based export"
         description="Creates an image-based PPTX from the live web deck. Use when you need a faithful snapshot."
-        disabled={isExporting}
+        disabled={disabled}
         exportingLabel="Exporting..."
         filename="webslides-img.pptx"
         message={imageMessage}
@@ -382,6 +382,68 @@ function PptxExportDialogContent({
         status={imageStatus}
         title="Image-based export"
       />
+    </div>
+  );
+}
+
+function ServerExportWarning({
+  error,
+  isChecking,
+  isReady,
+  onRetry,
+}: {
+  error: unknown;
+  isChecking: boolean;
+  isReady: boolean;
+  onRetry: () => void;
+}) {
+  const failedHealthMessage =
+    error instanceof TypeError
+      ? "File exports require the FastAPI server to be reachable."
+      : `Server check failed: ${describeServerError(error)}`;
+  const message = isChecking
+    ? "File export buttons are disabled while the FastAPI server is checked."
+    : isReady
+      ? "File exports use the FastAPI server at the URL below."
+      : failedHealthMessage;
+
+  return (
+    <div className="mb-4 rounded-lg border border-border bg-muted p-4 text-sm leading-6 text-muted-foreground">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <p className="min-w-0">
+          <strong className="text-foreground">
+            {isChecking
+              ? "Checking export server."
+              : "FastAPI server required."}
+          </strong>{" "}
+          {message}
+          {!isChecking && !isReady ? (
+            <>
+              {" "}
+              Start it with{" "}
+              <code className="rounded bg-background px-1.5 py-0.5 text-foreground">
+                uv run fastapi dev
+              </code>
+              .
+            </>
+          ) : null}
+        </p>
+        {!isReady ? (
+          <Button
+            className="shrink-0"
+            disabled={isChecking}
+            onClick={onRetry}
+            size="sm"
+            type="button"
+            variant="outline"
+          >
+            Retry
+          </Button>
+        ) : null}
+      </div>
+      <p className="mt-2 font-mono text-[11px] text-muted-foreground">
+        {SERVER_URL}
+      </p>
     </div>
   );
 }
@@ -551,6 +613,10 @@ const DevDialogContent = import.meta.env.DEV
   : null;
 
 export function ExportDialog() {
+  const serverHealth = useQuery({
+    queryKey: ["health"],
+    queryFn: ({ signal }) => fetchHealth(signal),
+  });
   const [menuOpen, setMenuOpen] = useState(false);
   const [activeDialog, setActiveDialog] = useState<ExportKind | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -563,6 +629,15 @@ export function ExportDialog() {
   const [editablePptxMessage, setEditablePptxMessage] = useState("");
   const [imagePptxStatus, setImagePptxStatus] = useState<ExportStatus>("idle");
   const [imagePptxMessage, setImagePptxMessage] = useState("");
+  const isFileExportDialogOpen =
+    dialogOpen && (activeDialog === "pdf" || activeDialog === "pptx");
+  const refetchServerHealth = serverHealth.refetch;
+
+  useEffect(() => {
+    if (isFileExportDialogOpen) {
+      void refetchServerHealth();
+    }
+  }, [isFileExportDialogOpen, refetchServerHealth]);
 
   function selectDialog(dialog: ExportKind) {
     if (!visibleExportOptions.some((option) => option.id === dialog)) {
@@ -641,6 +716,9 @@ export function ExportDialog() {
     (option) => option.id === activeDialog,
   );
   const visibleActiveDialog = activeOption ? activeDialog : null;
+  const serverChecking = serverHealth.isPending || serverHealth.isFetching;
+  const serverReady =
+    serverHealth.isSuccess && !serverChecking && !serverHealth.isRefetchError;
 
   return (
     <>
@@ -688,9 +766,20 @@ export function ExportDialog() {
         open={dialogOpen}
         title={activeOption?.title ?? "Export"}
       >
+        {visibleActiveDialog === "pdf" || visibleActiveDialog === "pptx" ? (
+          <ServerExportWarning
+            error={serverHealth.error}
+            isChecking={serverChecking}
+            isReady={serverReady}
+            onRetry={() => {
+              void serverHealth.refetch();
+            }}
+          />
+        ) : null}
         {visibleActiveDialog === "pdf" ? (
           <FileExportDialogContent
             buttonLabel="Download PDF"
+            disabled={!serverReady}
             exportingLabel="Exporting PDF..."
             filename="webslides.pdf"
             message={pdfMessage}
@@ -707,6 +796,7 @@ export function ExportDialog() {
             imageStatus={imagePptxStatus}
             onEditableExport={handleEditablePptxExport}
             onImageExport={handleImagePptxExport}
+            serverReady={serverReady}
             savesLocalArtifacts={savesLocalArtifacts}
           />
         ) : null}
