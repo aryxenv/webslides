@@ -10,7 +10,6 @@ import {
   exportPdf,
   fetchHealth,
   isDownloadedExportResult,
-  SERVER_URL,
 } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -63,6 +62,9 @@ const devExportOptions: ExportOption[] = import.meta.env.DEV
   : [];
 
 const visibleExportOptions = [...fileExportOptions, ...devExportOptions];
+
+const pptxSyncPrompt =
+  "Use the update-pptx-export-template skill at .github/skills/update-pptx-export-template to sync the PowerPoint exports with the current web presentation. Update or regenerate both the Editable export and Image-based export, then verify both exports before reporting back.";
 
 function ExportIcon() {
   return (
@@ -358,6 +360,20 @@ function PptxExportDialogContent({
 
   return (
     <div className="space-y-3">
+      {import.meta.env.DEV ? (
+        <div className="rounded-lg border border-border bg-card p-4 text-sm leading-6 text-muted-foreground">
+          <p>
+            First, ask GitHub Copilot to sync the PowerPoint exports with the
+            current web deck. Then run the export you need.
+          </p>
+          <div className="mt-4">
+            <CommandBlock
+              command={pptxSyncPrompt}
+              label="Copilot sync prompt"
+            />
+          </div>
+        </div>
+      ) : null}
       <PptxExportAction
         buttonLabel="Editable export"
         description="Creates the hand-built editable PPTX template. Use when you need PowerPoint objects you can modify."
@@ -399,51 +415,54 @@ function ServerExportWarning({
 }) {
   const failedHealthMessage =
     error instanceof TypeError
-      ? "File exports require the FastAPI server to be reachable."
+      ? "Start FastAPI first."
       : `Server check failed: ${describeServerError(error)}`;
   const message = isChecking
-    ? "File export buttons are disabled while the FastAPI server is checked."
+    ? "Checking FastAPI server..."
     : isReady
-      ? "File exports use the FastAPI server at the URL below."
+      ? "FastAPI server connected."
       : failedHealthMessage;
+  const dotClassName = isChecking
+    ? "animate-pulse bg-muted-foreground"
+    : isReady
+      ? "bg-green-500"
+      : "bg-red-500";
 
   return (
-    <div className="mb-4 rounded-lg border border-border bg-muted p-4 text-sm leading-6 text-muted-foreground">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <p className="min-w-0">
-          <strong className="text-foreground">
-            {isChecking
-              ? "Checking export server."
-              : "FastAPI server required."}
-          </strong>{" "}
-          {message}
-          {!isChecking && !isReady ? (
-            <>
-              {" "}
-              Start it with{" "}
-              <code className="rounded bg-background px-1.5 py-0.5 text-foreground">
-                uv run fastapi dev
-              </code>
-              .
-            </>
-          ) : null}
-        </p>
-        {!isReady ? (
-          <Button
-            className="shrink-0"
-            disabled={isChecking}
-            onClick={onRetry}
-            size="sm"
-            type="button"
-            variant="outline"
-          >
-            Retry
-          </Button>
+    <div className="mb-3 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs leading-5 text-muted-foreground">
+      <span className={cn("h-1.5 w-1.5 rounded-full", dotClassName)} />
+      <span>
+        <strong className="text-foreground">
+          {isChecking
+            ? "Checking server."
+            : isReady
+              ? "Server ready."
+              : "Server required."}
+        </strong>{" "}
+        {message}
+        {!isChecking && !isReady ? (
+          <>
+            {" "}
+            Run{" "}
+            <code className="rounded bg-muted px-1 py-0.5 text-foreground">
+              uv run fastapi dev
+            </code>
+            .
+          </>
         ) : null}
-      </div>
-      <p className="mt-2 font-mono text-[11px] text-muted-foreground">
-        {SERVER_URL}
-      </p>
+      </span>
+      {!isReady ? (
+        <Button
+          className="h-auto px-1 py-0 text-xs underline underline-offset-2"
+          disabled={isChecking}
+          onClick={onRetry}
+          size="sm"
+          type="button"
+          variant="quiet"
+        >
+          Retry
+        </Button>
+      ) : null}
     </div>
   );
 }
@@ -542,12 +561,16 @@ function CommandBlock({ command, label }: { command: string; label: string }) {
         {label}
       </p>
       <div className="relative">
-        <pre className="overflow-x-auto rounded-lg border border-border bg-muted py-3 pl-3 pr-12 text-xs leading-5 text-foreground">
+        <pre className="overflow-x-auto rounded-lg border border-border bg-muted py-3 pl-3 pr-20 text-xs leading-5 text-foreground">
           <code>{command}</code>
         </pre>
+        <span
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-y-px right-0 z-10 w-24 rounded-r-lg bg-gradient-to-l from-muted via-muted to-transparent"
+        />
         <Button
           aria-label={`Copy ${label}`}
-          className="absolute right-2 top-1/2 h-8 w-8 -translate-y-1/2 p-0"
+          className="absolute right-2 top-1/2 z-20 h-8 w-8 -translate-y-1/2 p-0"
           onClick={copyCommand}
           size="sm"
           type="button"
