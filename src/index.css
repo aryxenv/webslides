@@ -69,7 +69,7 @@
 }
 
 @page {
-  size: 13.333in 7.5in;
+  size: 13.333333in 7.5in;
   margin: 0;
 }
 
@@ -77,8 +77,10 @@
   html,
   body,
   #root {
-    width: 13.333in;
+    width: 13.333333in;
     min-height: 7.5in;
+    margin: 0;
+    padding: 0;
   }
 
   body {
@@ -91,8 +93,21 @@
   }
 
   .pdf-export-page {
+    box-sizing: border-box;
+    width: 13.333333in;
+    height: 7.5in;
+    min-height: 7.5in;
+    max-height: 7.5in;
+    overflow: hidden;
     break-after: page;
     page-break-after: always;
+  }
+
+  .pdf-export-slide-canvas {
+    width: 1920px;
+    height: 1080px;
+    transform: scale(0.6666666667);
+    transform-origin: top left;
   }
 
   .pdf-export-page:last-child {

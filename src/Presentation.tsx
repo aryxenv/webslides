@@ -119,12 +119,14 @@ function PdfExportPresentation() {
           aria-label={label}
           className="pdf-export-page h-screen w-screen overflow-hidden bg-background"
         >
-          <Component
-            isActive
-            cycleIndex={0}
-            cycleCount={cycleItems}
-            onSelectCycle={() => undefined}
-          />
+          <div className="pdf-export-slide-canvas h-full w-full">
+            <Component
+              isActive
+              cycleIndex={0}
+              cycleCount={cycleItems}
+              onSelectCycle={() => undefined}
+            />
+          </div>
         </article>
       ))}
     </main>

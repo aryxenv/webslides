@@ -217,7 +217,7 @@ try {
   await waitForExportSettled(page, "PDF");
   await page.pdf({
     path: outputPath,
-    width: "13.333in",
+    width: "13.333333in",
     height: "7.5in",
     printBackground: true,
     preferCSSPageSize: true,
