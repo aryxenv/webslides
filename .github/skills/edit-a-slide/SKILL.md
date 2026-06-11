@@ -44,9 +44,8 @@ DON'T:
   design system / UI primitives to fix one slide.
 - Delete an entire slide from the deck; use `delete-a-slide` for whole-slide
   removal.
-- Do not update `scripts/export-pptx.mjs` or generated files in `exports/`
-  during normal web slide edits. PowerPoint parity is a separate static
-  export-template task handled by `update-pptx-export-template`.
+- Do not update generated files in `exports/` during normal web slide edits.
+  The editable PowerPoint export is generated dynamically from the live deck.
 
 ## Phase 3 — Keep invariants intact
 
@@ -71,5 +70,4 @@ These are the things that silently break a slide if ignored:
   Confirm the change, that cycling still works, and that there's no horizontal
   overflow at a narrow width.
 - Run `npm run build` to typecheck and `npx prettier --write` on changed files.
-- Do not run or update the PowerPoint export template unless that was explicitly
-  requested as a separate export-template task.
+- Do not commit generated PowerPoint exports unless the user explicitly asks.

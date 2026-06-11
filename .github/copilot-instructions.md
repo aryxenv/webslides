@@ -34,11 +34,10 @@ export privately, and optionally publish publicly.
   `exports/webslides.pdf`, `exports/webslides.pptx`, and
   `exports/webslides-img.pptx` for development exports. Production file exports
   should download to the user's system.
-- The PowerPoint export is a hand-built static template in
-  `scripts/export-pptx.mjs`; the image PowerPoint export is generated from the
-  live web deck by `scripts/export-pptx-img.mjs`. Do not update either during
-  normal slide add/edit/demo work; use the `update-pptx-export-template` skill
-  only when the user explicitly asks to update PPTX/PowerPoint export parity.
+- The editable PowerPoint export is generated dynamically from the live web deck
+  by `services/editable-pptx/` through `scripts/export-pptx.mjs`; the image
+  PowerPoint export is generated from the live web deck by
+  `scripts/export-pptx-img.mjs`. Do not commit generated files in `exports/`.
 - If the user asks about publishing or sharing, distinguish private local
   artifacts from public GitHub Pages deployment.
 
@@ -63,5 +62,3 @@ Use the repo skills when they match the task:
 - `delete-a-slide`: remove an entire slide from the deck cleanly.
 - `integrate-demo-into-slides`: turn an app/demo into a slide.
 - `theming`: re-theme the deck or replace the account logo.
-- `update-pptx-export-template`: update the static PowerPoint export builder
-  after the web deck is already correct.
