@@ -53,10 +53,9 @@ DON'T:
 - Run the demo's timers/sockets/autoplay while the slide is inactive — gate on
   `isActive` (slides stay mounted via opacity crossfade).
 - Register more than one deck entry for one demo.
-- Do not update `scripts/export-pptx.mjs` or generated files in `exports/` as
-  part of a normal demo integration. The native PowerPoint export is a separate
-  static template; use `update-pptx-export-template` only when the user
-  explicitly asks for PPTX parity.
+- Do not update generated files in `exports/` as part of a normal demo
+  integration. The editable PowerPoint export is generated dynamically from the
+  live deck.
 
 ## Phase 3 — Handle server / backend dependencies
 
@@ -98,5 +97,4 @@ instead of bundling a second backend:
   interactive, the server route responds (if used), and there's no horizontal
   overflow. Run `npm run build` to typecheck and `npx prettier --write` on
   changed files.
-- Do not run or update the PowerPoint export template unless that was explicitly
-  requested as a separate export-template task.
+- Do not commit generated PowerPoint exports unless the user explicitly asks.

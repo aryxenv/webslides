@@ -40,6 +40,7 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
 
     return (
       <Comp
+        data-pptx-native="button-or-badge"
         className={cn(buttonVariants({ variant, size, className }))}
         ref={ref}
         {...props}

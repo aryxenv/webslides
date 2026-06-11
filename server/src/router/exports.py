@@ -17,8 +17,15 @@ EXPORTS_DIR = REPO_ROOT / "exports"
 PDF_PATH = EXPORTS_DIR / "webslides.pdf"
 EDITABLE_PPTX_PATH = EXPORTS_DIR / "webslides.pptx"
 IMAGE_PPTX_PATH = EXPORTS_DIR / "webslides-img.pptx"
+EDITABLE_PPTX_REPORT_PATH = EXPORTS_DIR / "webslides.pptx.report.json"
 LOCAL_HOSTS = {"localhost", "127.0.0.1", "::1", "0.0.0.0"}
 EXPORT_ALLOWED_HOSTS_ENV = "WEBSLIDES_EXPORT_ALLOWED_HOSTS"
+EDITABLE_PPTX_NATIVE_MODE = "native-editable"
+EDITABLE_PPTX_DEBUG_FIDELITY_MODE = "debug-fidelity"
+EDITABLE_PPTX_MODES = {
+    EDITABLE_PPTX_NATIVE_MODE,
+    EDITABLE_PPTX_DEBUG_FIDELITY_MODE,
+}
 PDF_MEDIA_TYPE = "application/pdf"
 PPTX_MEDIA_TYPE = (
     "application/vnd.openxmlformats-officedocument.presentationml.presentation"
@@ -27,6 +34,7 @@ PPTX_MEDIA_TYPE = (
 
 class LocalExportRequest(BaseModel):
     url: str
+    mode: str | None = None
 
 
 def get_allowed_export_hosts() -> set[str]:
@@ -65,6 +73,28 @@ def ensure_export_url(url: str) -> str:
     return url
 
 
+def ensure_editable_pptx_mode(mode: str | None) -> str:
+    export_mode = mode or EDITABLE_PPTX_NATIVE_MODE
+    if export_mode not in EDITABLE_PPTX_MODES:
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                "Editable PPTX mode must be "
+                f"{EDITABLE_PPTX_NATIVE_MODE} or {EDITABLE_PPTX_DEBUG_FIDELITY_MODE}."
+            ),
+        )
+
+    return export_mode
+
+
+def editable_pptx_args(mode: str, report_path: Path | None = None) -> list[str]:
+    args = ["--mode", mode]
+    if report_path:
+        return [*args, "--report-output", str(report_path)]
+
+    return [*args, "--no-report"]
+
+
 def run_npm_export(
     *,
     script_name: str,
@@ -72,6 +102,7 @@ def run_npm_export(
     output_path: Path,
     export_label: str,
     timeout: int = 120,
+    extra_args: list[str] | None = None,
 ) -> None:
     npm = shutil.which("npm")
     if not npm:
@@ -81,17 +112,19 @@ def run_npm_export(
         )
 
     try:
+        command = [
+            npm,
+            "run",
+            script_name,
+            "--",
+            "--url",
+            url,
+            "--output",
+            str(output_path),
+            *(extra_args or []),
+        ]
         completed = subprocess.run(
-            [
-                npm,
-                "run",
-                script_name,
-                "--",
-                "--url",
-                url,
-                "--output",
-                str(output_path),
-            ],
+            command,
             cwd=REPO_ROOT,
             capture_output=True,
             check=False,
@@ -132,6 +165,7 @@ def downloadable_export_response(
     url: str,
     export_label: str,
     timeout: int = 120,
+    extra_args: list[str] | None = None,
 ):
     temp_dir = Path(tempfile.mkdtemp(prefix="webslides-export-"))
     output_path = temp_dir / filename
@@ -143,6 +177,7 @@ def downloadable_export_response(
             output_path=output_path,
             export_label=export_label,
             timeout=timeout,
+            extra_args=extra_args,
         )
     except HTTPException:
         shutil.rmtree(temp_dir, ignore_errors=True)
@@ -199,11 +234,14 @@ def export_pptx(request: LocalExportRequest):
 @router.post("/pptx/editable")
 def export_editable_pptx(request: LocalExportRequest):
     url = ensure_export_url(request.url)
+    mode = ensure_editable_pptx_mode(request.mode)
     run_npm_export(
         script_name="export:pptx",
         url=url,
         output_path=EDITABLE_PPTX_PATH,
         export_label="editable PPTX",
+        timeout=300,
+        extra_args=editable_pptx_args(mode, EDITABLE_PPTX_REPORT_PATH),
     )
 
     return saved_export_response(EDITABLE_PPTX_PATH)
@@ -212,12 +250,15 @@ def export_editable_pptx(request: LocalExportRequest):
 @router.post("/pptx/editable/download")
 def download_editable_pptx(request: LocalExportRequest):
     url = ensure_export_url(request.url)
+    mode = ensure_editable_pptx_mode(request.mode)
     return downloadable_export_response(
         filename=EDITABLE_PPTX_PATH.name,
         media_type=PPTX_MEDIA_TYPE,
         script_name="export:pptx",
         url=url,
         export_label="editable PPTX",
+        timeout=300,
+        extra_args=editable_pptx_args(mode),
     )
 
 

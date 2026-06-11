@@ -107,8 +107,12 @@ export function EmbeddedDemoWorkflow({
                   <span className="w-16 text-xs text-muted-foreground">
                     {item}
                   </span>
-                  <span className="h-2 flex-1 rounded-sm bg-background">
+                  <span
+                    className="h-2 flex-1 rounded-sm bg-background"
+                    data-pptx-native="progress-bar"
+                  >
                     <span
+                      data-pptx-native="progress-bar"
                       className={cn(
                         "block h-2 rounded-sm bg-foreground transition-all duration-500",
                         mode === item ? "w-full" : "w-1/3",

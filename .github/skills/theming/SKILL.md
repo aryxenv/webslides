@@ -73,9 +73,8 @@ DON'T:
   health dot) unless the user explicitly asks — they're deliberate, not part of
   the neutral palette.
 - Introduce hardcoded hex/RGB in slide components. All color flows through tokens.
-- Do not update `scripts/export-pptx.mjs` or generated files in `exports/`
-  during normal deck theming. PowerPoint theme parity is a separate static
-  export-template task handled by `update-pptx-export-template`.
+- Do not update generated files in `exports/` during normal deck theming. The
+  editable PowerPoint export is generated dynamically from the live deck.
 
 If the user wants a dark theme, set the `:root` values to the dark palette
 directly (simplest), or add a `.dark { … }` block mirroring every variable and
@@ -127,7 +126,6 @@ is currently a placeholder.
   new `primary`, and nothing fell back to an unreadable contrast.
 - If you changed `brand-lockup.tsx` or added an asset, run `npm run build` to
   typecheck, then `npx prettier --write` on changed files.
-- Do not run or update the PowerPoint export template unless that was explicitly
-  requested as a separate export-template task.
+- Do not commit generated PowerPoint exports unless the user explicitly asks.
 - Briefly tell the user the palette you applied (and the logo source, if any) so
   they can fine-tune.

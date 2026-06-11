@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { ExportDialog } from "@/components/ui/export-dialog";
 import { usePresentationNavigation } from "@/hooks/usePresentationNavigation";
 import { useSwipeNavigation } from "@/hooks/useSwipeNavigation";
+import { isPresentationExportMode } from "@/lib/export-mode";
 import {
   isSpaceKey,
   shouldIgnorePresentationShortcut,
@@ -68,10 +69,6 @@ const slideIds: readonly string[] = slides.map((slide) => slide.id);
 interface CycleState {
   slideId: string;
   index: number;
-}
-
-function isPdfExportMode() {
-  return new URLSearchParams(window.location.search).get("export") === "pdf";
 }
 
 function useHideAppLoader() {
@@ -286,7 +283,7 @@ function InteractivePresentation() {
 }
 
 export function Presentation() {
-  return isPdfExportMode() ? (
+  return isPresentationExportMode() ? (
     <PdfExportPresentation />
   ) : (
     <InteractivePresentation />

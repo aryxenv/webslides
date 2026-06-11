@@ -9,6 +9,8 @@
     "export:pdf": "node scripts/export-pdf.mjs",
     "export:pptx": "node scripts/export-pptx.mjs",
     "export:pptx-img": "node scripts/export-pptx-img.mjs",
+    "test:contracts": "node --test services/editable-pptx/src/contracts/export-contracts.test.mjs services/editable-pptx/src/manifest/slide-manifest.test.mjs services/editable-pptx/src/ooxml/pptx-writer.test.mjs services/editable-pptx/src/quality/native-quality-gates.test.mjs",
+    "test:editable-pptx": "npm run test:contracts",
     "azure:url": "node scripts/show-azure-url.mjs",
     "lint": "eslint .",
     "preview": "vite preview"

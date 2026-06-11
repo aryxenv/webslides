@@ -63,9 +63,6 @@ const devExportOptions: ExportOption[] = import.meta.env.DEV
 
 const visibleExportOptions = [...fileExportOptions, ...devExportOptions];
 
-const pptxSyncPrompt =
-  "Use the update-pptx-export-template skill at .github/skills/update-pptx-export-template to sync the PowerPoint exports with the current web presentation. Update or regenerate both the Editable export and Image-based export, then verify both exports before reporting back.";
-
 function ExportIcon() {
   return (
     <svg
@@ -360,23 +357,9 @@ function PptxExportDialogContent({
 
   return (
     <div className="space-y-3">
-      {import.meta.env.DEV ? (
-        <div className="rounded-lg border border-border bg-card p-4 text-sm leading-6 text-muted-foreground">
-          <p>
-            First, ask GitHub Copilot to sync the PowerPoint exports with the
-            current web deck. Then run the export you need.
-          </p>
-          <div className="mt-4">
-            <CommandBlock
-              command={pptxSyncPrompt}
-              label="Copilot sync prompt"
-            />
-          </div>
-        </div>
-      ) : null}
       <PptxExportAction
-        buttonLabel="Editable export"
-        description="Creates the hand-built editable PPTX template. Use when you need PowerPoint objects you can modify."
+        buttonLabel="Export"
+        description="Best-effort editable PowerPoint objects. Estimated time: 2 min."
         disabled={disabled}
         exportingLabel="Exporting..."
         filename="webslides.pptx"
@@ -384,11 +367,11 @@ function PptxExportDialogContent({
         onExport={onEditableExport}
         savesLocalArtifacts={savesLocalArtifacts}
         status={editableStatus}
-        title="Editable export"
+        title="Editable PPTX"
       />
       <PptxExportAction
-        buttonLabel="Image-based export"
-        description="Creates an image-based PPTX from the live web deck. Use when you need a faithful snapshot."
+        buttonLabel="Export"
+        description="Pixel-perfect slide images. Estimated time: 1 min."
         disabled={disabled}
         exportingLabel="Exporting..."
         filename="webslides-img.pptx"
@@ -396,7 +379,7 @@ function PptxExportDialogContent({
         onExport={onImageExport}
         savesLocalArtifacts={savesLocalArtifacts}
         status={imageStatus}
-        title="Image-based export"
+        title="Image-based PPTX"
       />
     </div>
   );
@@ -701,6 +684,7 @@ export function ExportDialog() {
     try {
       const result = await exportEditablePptx(window.location.origin, {
         downloadOnly: !savesLocalArtifacts,
+        mode: "native-editable",
       });
       setEditablePptxStatus("success");
       if (isDownloadedExportResult(result)) {

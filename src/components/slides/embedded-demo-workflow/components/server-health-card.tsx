@@ -2,7 +2,13 @@ import { useQuery } from "@tanstack/react-query";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { describeServerError, fetchHealth, SERVER_URL } from "@/lib/api";
+import {
+  describeServerError,
+  EXPORT_HEALTH_STATUS,
+  fetchHealth,
+  SERVER_URL,
+} from "@/lib/api";
+import { isPresentationExportMode } from "@/lib/export-mode";
 import { cn } from "@/lib/utils";
 
 interface ServerHealthCardProps {
@@ -16,16 +22,20 @@ export function ServerHealthCard({
   isActive,
   onSelect,
 }: ServerHealthCardProps) {
+  const exportMode = isPresentationExportMode();
   const health = useQuery({
     queryKey: ["health"],
     queryFn: ({ signal }) => fetchHealth(signal),
+    enabled: !exportMode,
   });
 
-  const state: "loading" | "error" | "ok" = health.isPending
-    ? "loading"
-    : health.isError
-      ? "error"
-      : "ok";
+  const state: "loading" | "error" | "ok" = exportMode
+    ? "ok"
+    : health.isPending
+      ? "loading"
+      : health.isError
+        ? "error"
+        : "ok";
 
   const dot = {
     loading: "bg-muted-foreground animate-pulse",
@@ -33,20 +43,24 @@ export function ServerHealthCard({
     ok: "bg-foreground",
   }[state];
 
-  const message =
-    state === "loading"
+  const message = exportMode
+    ? EXPORT_HEALTH_STATUS.status
+    : state === "loading"
       ? "Calling /health…"
       : state === "error"
         ? describeServerError(health.error)
         : (health.data?.status ?? "No status returned");
+  const isFetching = !exportMode && health.isFetching;
 
   return (
     <Card
       onClick={onSelect}
+      aria-busy={state === "loading"}
       className={cn(
         "cursor-pointer border-2 p-5 transition-colors duration-300",
         isActive ? "border-primary" : "border-border",
       )}
+      data-state={state}
     >
       <div className="flex items-center justify-between gap-3">
         <p className="text-sm font-semibold">Live server call</p>
@@ -72,14 +86,16 @@ export function ServerHealthCard({
         <Button
           onClick={(event) => {
             event.stopPropagation();
-            health.refetch();
+            if (!exportMode) {
+              health.refetch();
+            }
           }}
-          disabled={health.isFetching}
+          disabled={isFetching}
           size="sm"
           type="button"
           variant="outline"
         >
-          {health.isFetching ? "Calling…" : "Call again"}
+          {isFetching ? "Calling…" : "Call again"}
         </Button>
       </div>
     </Card>

@@ -29,13 +29,11 @@ slide — that is an `edit-a-slide` task.
 - If any neighboring slide or navigation copy explicitly referenced the deleted
   slide, update that copy only as needed.
 
-## Phase 3 — Keep PPTX export decoupled
+## Phase 3 — Keep generated exports decoupled
 
-- Do **not** update `scripts/export-pptx.mjs` or generated files in `exports/`
-  during the delete task.
-- If the deleted web slide also appears in the static PowerPoint export, tell the
-  user that PPTX parity is a separate step handled by
-  `update-pptx-export-template`.
+- Do **not** update generated files in `exports/` during the delete task.
+- The editable and image-based PowerPoint exports render from the live deck, so
+  deleting the slide from `src/Presentation.tsx` removes it from future exports.
 
 ## Phase 4 — Verify
 

@@ -23,6 +23,12 @@ export interface HealthStatus {
   status: string;
 }
 
+// Export captures run without depending on the live demo server, but should
+// still match the stable /health payload presenters see once the server settles.
+export const EXPORT_HEALTH_STATUS: HealthStatus = {
+  status: "Server healthy!",
+};
+
 export interface FileExportResult {
   blob: Blob;
   filename: string;
@@ -40,6 +46,12 @@ export type SavedOrDownloadedExportResult =
 export interface ExportRequestOptions {
   downloadOnly?: boolean;
   signal?: AbortSignal;
+}
+
+export type EditablePptxMode = "native-editable" | "debug-fidelity";
+
+export interface EditablePptxExportOptions extends ExportRequestOptions {
+  mode?: EditablePptxMode;
 }
 
 /** A failed fetch (connection refused / server down) surfaces as a TypeError,
@@ -123,6 +135,7 @@ async function exportPptxArtifact(
   fallbackFilename: string,
   url: string,
   options: ExportRequestOptions = {},
+  body: Record<string, unknown> = {},
 ): Promise<SavedOrDownloadedExportResult> {
   const exportPath = options.downloadOnly ? `${path}/download` : path;
   const response = await fetch(`${SERVER_URL}${exportPath}`, {
@@ -130,7 +143,7 @@ async function exportPptxArtifact(
     headers: {
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({ url }),
+    body: JSON.stringify({ url, ...body }),
     signal: options.signal,
   });
 
@@ -150,13 +163,14 @@ async function exportPptxArtifact(
 
 export async function exportEditablePptx(
   url: string,
-  options: ExportRequestOptions = {},
+  options: EditablePptxExportOptions = {},
 ): Promise<SavedOrDownloadedExportResult> {
   return exportPptxArtifact(
     "/exports/pptx/editable",
     "webslides.pptx",
     url,
     options,
+    { mode: options.mode ?? "native-editable" },
   );
 }
 
