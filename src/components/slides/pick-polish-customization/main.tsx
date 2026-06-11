@@ -69,7 +69,10 @@ export function PickPolishCustomization({
             </p>
           </div>
           <div className="flex flex-1 flex-col gap-4 p-5">
-            <div className="rounded-lg border-2 border-dashed border-primary p-4">
+            <div
+              className="rounded-lg border-2 border-dashed border-primary p-4"
+              data-pptx-native="card-or-box"
+            >
               <p className="text-lg font-semibold tracking-[-0.02em]">
                 Selected slide element
               </p>

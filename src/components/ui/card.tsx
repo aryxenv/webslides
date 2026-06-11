@@ -7,6 +7,7 @@ const Card = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <div
     ref={ref}
+    data-pptx-native="card-or-box"
     className={cn(
       "rounded-lg border border-border bg-card text-card-foreground shadow-line",
       className,

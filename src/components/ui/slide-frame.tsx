@@ -3,6 +3,7 @@ import { cn } from "@/lib/utils";
 import { BrandLockup } from "@/components/ui/brand-lockup";
 import { HelpDialog } from "@/components/ui/help-dialog";
 import { ServerHealthDot } from "@/components/ui/server-health-dot";
+import { isPresentationExportMode } from "@/lib/export-mode";
 
 interface SlideFrameProps {
   eyebrow?: string;
@@ -23,6 +24,8 @@ export function SlideFrame({
   className,
   titleClassName,
 }: SlideFrameProps) {
+  const exportMode = isPresentationExportMode();
+
   return (
     <section
       className={cn(
@@ -43,11 +46,11 @@ export function SlideFrame({
                 ) : null}
                 {eyebrow}
               </p>
-              <ServerHealthDot />
+              {exportMode ? null : <ServerHealthDot />}
               {eyebrowAdornment}
             </div>
             <div className="ml-auto flex shrink-0 items-center gap-3">
-              <HelpDialog />
+              {exportMode ? null : <HelpDialog />}
               <BrandLockup />
             </div>
           </div>

@@ -45,18 +45,60 @@ Repo skills in `.github/skills/` cover common deck work:
 - **Add/Edit/Delete slides**: change the story without learning the file layout.
 - **Theming**: update palette and account logo.
 - **Integrate demo into slides**: map an app into the deck and backend.
-- **Update PPTX export**: sync the editable PowerPoint template after slide changes.
+- **Update PPTX export**: verify native editable and image PowerPoint exports after slide changes.
 
 ## Export and share
 
-| Path | Use when | Output |
-| --- | --- | --- |
-| **Local export** | You need private files | `webslides.pdf`, `webslides.pptx`, `webslides-img.pptx` in `exports/` |
-| **GitHub Pages** | The deck is public and static | `https://<owner>.github.io/<repo>/` |
-| **Azure** | The hosted deck needs the FastAPI backend | Two Azure Container Apps |
+| Path             | Use when                                  | Output                                                                |
+| ---------------- | ----------------------------------------- | --------------------------------------------------------------------- |
+| **Local export** | You need private files                    | `webslides.pdf`, `webslides.pptx`, `webslides-img.pptx` in `exports/` |
+| **GitHub Pages** | The deck is public and static             | `https://<owner>.github.io/<repo>/`                                   |
+| **Azure**        | The hosted deck needs the FastAPI backend | Two Azure Container Apps                                              |
 
 Local file exports use the footer **Export** menu and require the FastAPI server.
 Generated files in `exports/` are ignored by git.
+In local development, PowerPoint export endpoints save `exports/` artifacts and
+return saved artifact metadata; production download endpoints return the file
+response. The editable PowerPoint export generates the private PDF artifact
+first, then uses the local `services/editable-pptx/` converter to create an
+editable `webslides.pptx` from the rendered web deck without changing the
+saved/downloaded response shape. The default `native-editable` mode emits
+visible text, cards, boxes, borders, buttons, badges, and simple icons as native
+PowerPoint objects and forbids duplicate baked visible text. Complex photos,
+canvas/WebGL, and other non-decomposable visuals are bounded raster fallback
+regions and are reported. By default, `npm run export:pptx` writes both
+`exports/webslides.pptx` and `exports/webslides.pptx.report.json`; the report
+includes native object counts, fallback raster counts, fallback area, reasons,
+and the editability score. Use
+`npm run export:pptx -- --mode debug-fidelity` or
+`npm run export:pptx -- --debug-fidelity` only when you need an explicit
+emergency raster fallback for visual comparison. The server accepts the same
+mode as an optional `/exports/pptx/editable` JSON field; omit it for the default
+native editable export. Production download endpoints keep returning only the
+file response to preserve the existing API shape.
+The image PowerPoint export remains the faithful raster fallback in
+`webslides-img.pptx`.
+
+Editable PPTX quality gates run generated native fixtures through package
+inspection and report checks:
+
+```pwsh
+npm run test:editable-pptx
+```
+
+Optional Windows-only desktop PowerPoint smoke (manual, not CI): after
+exporting `exports\webslides.pptx`, run this in PowerShell on a machine with
+PowerPoint installed. Any repair dialog or export failure means the smoke failed.
+
+```pwsh
+$pptx = (Resolve-Path .\exports\webslides.pptx).Path
+$pdf = Join-Path (Resolve-Path .\exports).Path 'webslides-powerpoint-smoke.pdf'
+$powerpoint = New-Object -ComObject PowerPoint.Application
+$deck = $powerpoint.Presentations.Open($pptx, $true, $false, $false)
+$deck.ExportAsFixedFormat($pdf, 2)
+$deck.Close()
+$powerpoint.Quit()
+```
 
 Deploy to Azure with:
 
