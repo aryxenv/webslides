@@ -1,5 +1,5 @@
 import { execFile } from "node:child_process";
-import { mkdir, writeFile } from "node:fs/promises";
+import { mkdir, open, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { promisify } from "node:util";
 import { fileURLToPath } from "node:url";
@@ -102,6 +102,36 @@ function resolveOutput(output) {
   return path.isAbsolute(output) ? output : path.join(repoRoot, output);
 }
 
+function isLockedFileError(error) {
+  return error?.code === "EBUSY" || error?.code === "EPERM";
+}
+
+function lockedOutputMessage(outputPath) {
+  return [
+    `Cannot write ${outputPath} because the file is currently locked.`,
+    "Close the existing PowerPoint file, stop any app previewing it, or choose a different --output path, then retry.",
+  ].join("\n");
+}
+
+async function assertOutputIsWritable(outputPath) {
+  await mkdir(path.dirname(outputPath), { recursive: true });
+
+  try {
+    const handle = await open(outputPath, "r+");
+    await handle.close();
+  } catch (error) {
+    if (error?.code === "ENOENT") {
+      return;
+    }
+
+    if (isLockedFileError(error)) {
+      throw new Error(lockedOutputMessage(outputPath));
+    }
+
+    throw error;
+  }
+}
+
 async function runPdfExport({ url, outputPath }) {
   const scriptPath = path.join(repoRoot, "scripts", "export-pdf.mjs");
   await mkdir(path.dirname(outputPath), { recursive: true });
@@ -197,45 +227,63 @@ function buildReport({ capture, mode, pdfOutput, pptxOutput }) {
   });
 }
 
-const url = readOption("--url", "http://localhost:5173/");
-const pptxOutput = resolveOutput(readOption("--output", defaultPptxOutput));
-const pdfOutput = resolveOutput(readOption("--pdf-output", defaultPdfOutput));
-const mode = readExportMode();
-const manifestOutput = hasOption("--manifest-output")
-  ? resolveOutput(readOption("--manifest-output"))
-  : undefined;
-const reportOutput = readReportOutput();
+async function main() {
+  const url = readOption("--url", "http://localhost:5173/");
+  const pptxOutput = resolveOutput(readOption("--output", defaultPptxOutput));
+  const pdfOutput = resolveOutput(readOption("--pdf-output", defaultPdfOutput));
+  const mode = readExportMode();
+  const manifestOutput = hasOption("--manifest-output")
+    ? resolveOutput(readOption("--manifest-output"))
+    : undefined;
+  const reportOutput = readReportOutput();
 
-await runPdfExport({ url, outputPath: pdfOutput });
-const capture = await captureDeck({ url, mode });
-await writePptx({ outputPath: pptxOutput, slides: capture.slides, mode });
-const report = buildReport({ capture, mode, pdfOutput, pptxOutput });
+  await assertOutputIsWritable(pptxOutput);
+  await runPdfExport({ url, outputPath: pdfOutput });
+  const capture = await captureDeck({ url, mode });
+  try {
+    await writePptx({ outputPath: pptxOutput, slides: capture.slides, mode });
+  } catch (error) {
+    if (isLockedFileError(error)) {
+      throw new Error(lockedOutputMessage(pptxOutput));
+    }
 
-if (manifestOutput) {
-  await mkdir(path.dirname(manifestOutput), { recursive: true });
-  await writeFile(
-    manifestOutput,
-    `${JSON.stringify(serializableManifest({ capture, report }), null, 2)}\n`,
+    throw error;
+  }
+  const report = buildReport({ capture, mode, pdfOutput, pptxOutput });
+
+  if (manifestOutput) {
+    await mkdir(path.dirname(manifestOutput), { recursive: true });
+    await writeFile(
+      manifestOutput,
+      `${JSON.stringify(serializableManifest({ capture, report }), null, 2)}\n`,
+    );
+  }
+
+  if (reportOutput) {
+    await mkdir(path.dirname(reportOutput), { recursive: true });
+    await writeFile(reportOutput, `${JSON.stringify(report, null, 2)}\n`);
+  }
+
+  console.log(
+    [
+      `PDF artifact exported to ${pdfOutput}`,
+      `Editable PPTX exported to ${pptxOutput}`,
+      `Mode: ${report.mode}`,
+      `Slides: ${report.slideCount}`,
+      `Editable text boxes: ${report.editableTextBoxes}`,
+      `Editable text lines: ${report.editableTextLines}`,
+      `Native objects: ${report.nativeObjects}`,
+      `Fallback raster regions: ${report.fallbackRasterRegions}`,
+      `Fallback raster area: ${report.fallbackRasterAreaPx}px²`,
+      `Editability score: ${report.editabilityScore}`,
+      reportOutput ? `Export report: ${reportOutput}` : undefined,
+    ]
+      .filter(Boolean)
+      .join("\n"),
   );
 }
 
-if (reportOutput) {
-  await mkdir(path.dirname(reportOutput), { recursive: true });
-  await writeFile(reportOutput, `${JSON.stringify(report, null, 2)}\n`);
-}
-
-console.log(
-  [
-    `PDF artifact exported to ${pdfOutput}`,
-    `Editable PPTX exported to ${pptxOutput}`,
-    `Mode: ${report.mode}`,
-    `Slides: ${report.slideCount}`,
-    `Editable text boxes: ${report.editableTextBoxes}`,
-    `Editable text lines: ${report.editableTextLines}`,
-    `Native objects: ${report.nativeObjects}`,
-    `Fallback raster regions: ${report.fallbackRasterRegions}`,
-    `Fallback raster area: ${report.fallbackRasterAreaPx}px²`,
-    `Editability score: ${report.editabilityScore}`,
-    reportOutput ? `Export report: ${reportOutput}` : undefined,
-  ].filter(Boolean).join("\n"),
-);
+main().catch((error) => {
+  console.error(error instanceof Error ? error.message : String(error));
+  process.exit(1);
+});

@@ -4,7 +4,6 @@ import { AgentDrivenAuthoring } from "@/components/slides/agent-driven-authoring
 import { EmbeddedDemoWorkflow } from "@/components/slides/embedded-demo-workflow/main";
 import { PickPolishCustomization } from "@/components/slides/pick-polish-customization/main";
 import { Sharing } from "@/components/slides/sharing/main";
-import { Temp } from "@/components/slides/temp/main";
 import { WebslidesIntroduction } from "@/components/slides/webslides-introduction/main";
 import type { SlideProps } from "@/components/slides/types";
 import { Button } from "@/components/ui/button";
@@ -62,12 +61,6 @@ const slides: SlideDefinition[] = [
     label: "Sharing",
     Component: Sharing,
     cycleItems: 2,
-  },
-  {
-    id: "temp",
-    label: "Temp",
-    Component: Temp,
-    cycleItems: 0,
   },
 ];
 
