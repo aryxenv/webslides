@@ -164,6 +164,11 @@ export async function inspectPptxPackage(input) {
       part: slidePart,
       relationshipsPart: relsPart,
       textBoxes: countMatches(slideXml, /<p:cNvSpPr txBox="1"\/>/g),
+      wrapSquareTextBoxes: countMatches(slideXml, /<a:bodyPr\b[^>]*wrap="square"/g),
+      wrapNoneTextBoxes: countMatches(slideXml, /<a:bodyPr\b[^>]*wrap="none"/g),
+      normalAutofitTextBoxes: countMatches(slideXml, /<a:normAutofit\b/g),
+      noAutofitTextBoxes: countMatches(slideXml, /<a:noAutofit\/>/g),
+      shapeAutofitTextBoxes: countMatches(slideXml, /<a:spAutoFit\/>/g),
       shapes: countMatches(slideXml, /<p:sp>/g),
       connectors: countMatches(slideXml, /<p:cxnSp>/g),
       pictures: countMatches(slideXml, /<p:pic>/g),
@@ -176,6 +181,11 @@ export async function inspectPptxPackage(input) {
   const totals = slides.reduce(
     (summary, slide) => {
       summary.textBoxes += slide.textBoxes;
+      summary.wrapSquareTextBoxes += slide.wrapSquareTextBoxes;
+      summary.wrapNoneTextBoxes += slide.wrapNoneTextBoxes;
+      summary.normalAutofitTextBoxes += slide.normalAutofitTextBoxes;
+      summary.noAutofitTextBoxes += slide.noAutofitTextBoxes;
+      summary.shapeAutofitTextBoxes += slide.shapeAutofitTextBoxes;
       summary.shapes += slide.shapes;
       summary.connectors += slide.connectors;
       summary.pictures += slide.pictures;
@@ -186,6 +196,11 @@ export async function inspectPptxPackage(input) {
     },
     {
       textBoxes: 0,
+      wrapSquareTextBoxes: 0,
+      wrapNoneTextBoxes: 0,
+      normalAutofitTextBoxes: 0,
+      noAutofitTextBoxes: 0,
+      shapeAutofitTextBoxes: 0,
       shapes: 0,
       connectors: 0,
       pictures: 0,
@@ -382,4 +397,3 @@ export function assertNativeQualityGates({
     packageTotals: packageInspection.totals,
   };
 }
-

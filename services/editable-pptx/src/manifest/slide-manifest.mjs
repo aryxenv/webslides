@@ -333,6 +333,38 @@ function normalizeTextMargins(raw = {}) {
   };
 }
 
+function normalizeTextFrame(raw = {}, page, diagnostics) {
+  if (!raw || typeof raw !== "object") {
+    return null;
+  }
+
+  return {
+    strategy: safeString(raw.strategy),
+    bounds: raw.bounds
+      ? normalizeBounds(raw.bounds, page, diagnostics)
+      : null,
+    inkBounds: raw.inkBounds
+      ? normalizeBounds(raw.inkBounds, page, diagnostics)
+      : null,
+    semanticBounds: raw.semanticBounds
+      ? normalizeBounds(raw.semanticBounds, page, diagnostics)
+      : null,
+  };
+}
+
+function normalizeWrapValue(value, fallback = "none") {
+  const wrap = safeString(value, fallback);
+  return wrap === "square" || wrap === "none" ? wrap : fallback;
+}
+
+function normalizeFitValue(value, fallback = "no-autofit") {
+  const fit = safeString(value, fallback).toLowerCase();
+  if (["none", "no-autofit", "shrink", "resize", "shape"].includes(fit)) {
+    return fit;
+  }
+  return fallback;
+}
+
 function normalizeTextElement(raw, context) {
   const diagnostics = [];
   const bounds = normalizeBounds(
@@ -370,17 +402,21 @@ function normalizeTextElement(raw, context) {
             normalizeLineBox(line, context.page, diagnostics, style),
           );
   const rawParagraph = raw.text?.paragraph ?? raw.paragraph ?? {};
+  const wrap = normalizeWrapValue(rawParagraph.wrap ?? raw.wrap, "none");
   const paragraph = {
     align: safeString(rawParagraph.align, style.align),
     verticalAlign: safeString(
       rawParagraph.verticalAlign ?? raw.text?.verticalAlign,
       "top",
     ),
-    wrap: safeString(rawParagraph.wrap ?? raw.wrap, "none"),
+    wrap,
     margins: normalizeTextMargins(
       rawParagraph.margins ?? raw.margins ?? style.margins,
     ),
-    fit: safeString(rawParagraph.fit, "no-autofit"),
+    fit: normalizeFitValue(
+      rawParagraph.fit ?? raw.fit,
+      wrap === "square" ? "shrink" : "no-autofit",
+    ),
   };
 
   if (!content) {
@@ -416,6 +452,7 @@ function normalizeTextElement(raw, context) {
       runs,
       lines,
       paragraph,
+      frame: normalizeTextFrame(raw.text?.frame ?? raw.frame, context.page, diagnostics),
       grouping: raw.text?.grouping ?? raw.grouping ?? null,
     },
     shape: null,
@@ -526,6 +563,8 @@ function normalizeSource(raw = {}) {
     ),
     dataPptxRole: safeString(raw.dataPptxRole ?? source.dataPptxRole),
     dataPptxGroup: safeString(raw.dataPptxGroup ?? source.dataPptxGroup),
+    dataPptxWrap: safeString(raw.dataPptxWrap ?? source.dataPptxWrap),
+    dataPptxFit: safeString(raw.dataPptxFit ?? source.dataPptxFit),
     role: safeString(source.role ?? raw.role),
     ariaLabel: safeString(raw.ariaLabel ?? source.ariaLabel ?? raw.label),
     title: safeString(raw.title ?? source.title),
@@ -963,6 +1002,7 @@ function legacyTextFromElement(element) {
     textRuns: element.text.runs,
     margins: element.text.paragraph?.margins,
     wrap: element.text.paragraph?.wrap,
+    fit: element.text.paragraph?.fit,
   };
 }
 

@@ -550,6 +550,28 @@ function paragraphPropertiesXml(item, line = {}) {
   return `<a:pPr algn="${align}">${lineSpacing}<a:spcAft><a:spcPts val="0"/></a:spcAft></a:pPr>`;
 }
 
+function textWrapValue(value) {
+  return value === "square" ? "square" : "none";
+}
+
+function autofitXml(item, wrap) {
+  const fit = String(
+    item.fit ?? (wrap === "square" ? "shrink" : "no-autofit"),
+  ).toLowerCase();
+  if (fit === "shrink" || fit === "norm-autofit" || fit === "text-to-fit-shape") {
+    const fontScale = item.fitFontScale ?? item.fontScale ?? "92%";
+    const lineSpaceReduction =
+      item.fitLineSpaceReduction ?? item.lineSpaceReduction ?? "20%";
+    return `<a:normAutofit fontScale="${escapeAttr(fontScale)}" lnSpcReduction="${escapeAttr(lineSpaceReduction)}"/>`;
+  }
+
+  if (fit === "resize" || fit === "shape" || fit === "shape-to-fit-text") {
+    return "<a:spAutoFit/>";
+  }
+
+  return "<a:noAutofit/>";
+}
+
 function collectedRunStyles(element) {
   const lineRuns = (element.text?.lines ?? []).flatMap((line) =>
     Array.isArray(line.runs) ? line.runs : [],
@@ -616,7 +638,8 @@ function textXml(id, item, pageWidth, pageHeight, { visible = true } = {}) {
   const { x, y, cx, cy } = toBoxEmu(item, pageWidth, pageHeight);
   const margins = bodyMarginEmu(item, pageWidth, pageHeight);
   const verticalAlign = verticalAlignToPptx(item.verticalAlign ?? item.paragraph?.verticalAlign);
-  const wrap = item.wrap ?? "none";
+  const wrap = textWrapValue(item.wrap);
+  const autofit = autofitXml(item, wrap);
   const fontSize = Math.max(100, Math.round(finiteNumber(item.fontSizePt, 12) * 100));
   const paragraphXml = textParagraphs(item)
     .map(({ line, runs }) => {
@@ -625,7 +648,7 @@ function textXml(id, item, pageWidth, pageHeight, { visible = true } = {}) {
     })
     .join("");
 
-  return `<p:sp><p:nvSpPr><p:cNvPr id="${id}" name="Editable Text ${id}"/><p:cNvSpPr txBox="1"/><p:nvPr/></p:nvSpPr><p:spPr><a:xfrm><a:off x="${x}" y="${y}"/><a:ext cx="${cx}" cy="${cy}"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom><a:noFill/><a:ln><a:noFill/></a:ln></p:spPr><p:txBody><a:bodyPr wrap="${escapeAttr(wrap)}" rtlCol="0" anchor="${verticalAlign}" lIns="${margins.lIns}" tIns="${margins.tIns}" rIns="${margins.rIns}" bIns="${margins.bIns}"><a:noAutofit/></a:bodyPr><a:lstStyle/>${paragraphXml}</p:txBody></p:sp>`;
+  return `<p:sp><p:nvSpPr><p:cNvPr id="${id}" name="Editable Text ${id}"/><p:cNvSpPr txBox="1"/><p:nvPr/></p:nvSpPr><p:spPr><a:xfrm><a:off x="${x}" y="${y}"/><a:ext cx="${cx}" cy="${cy}"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom><a:noFill/><a:ln><a:noFill/></a:ln></p:spPr><p:txBody><a:bodyPr wrap="${escapeAttr(wrap)}" rtlCol="0" anchor="${verticalAlign}" lIns="${margins.lIns}" tIns="${margins.tIns}" rIns="${margins.rIns}" bIns="${margins.bIns}">${autofit}</a:bodyPr><a:lstStyle/>${paragraphXml}</p:txBody></p:sp>`;
 }
 
 function pictureXml(id, name, relId, rect, options = {}) {
@@ -1085,6 +1108,7 @@ function textItemFromManifestElement(element) {
     textRuns: element.text?.runs ?? [],
     margins: element.text?.paragraph?.margins ?? style.margins,
     wrap: element.text?.paragraph?.wrap,
+    fit: element.text?.paragraph?.fit,
     opacity: element.opacity,
   };
 }

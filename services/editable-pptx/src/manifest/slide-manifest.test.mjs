@@ -22,6 +22,16 @@ const titleStyle = {
   align: "left",
 };
 
+const bodyStyle = {
+  ...titleStyle,
+  fontSizePx: 24,
+  fontSizePt: 18,
+  lineHeightPx: 32,
+  lineHeightPt: 24,
+  color: "374151",
+  bold: false,
+};
+
 test("normalizes captured DOM into native slide manifest elements", () => {
   const manifest = normalizeCapturedDeckToManifest({
     mode: EXPORT_MODES.NATIVE_EDITABLE,
@@ -518,5 +528,64 @@ test("keeps semantic text as calibrated line groups with screenshot suppression"
     slide.diagnostics.at(-1).code,
     "native-background-screenshot-suppressed",
   );
+});
+
+test("normalizes semantic wrap frames and default shrink fit", () => {
+  const manifest = normalizeCapturedDeckToManifest({
+    mode: EXPORT_MODES.NATIVE_EDITABLE,
+    slides: [
+      {
+        index: 0,
+        width: 1920,
+        height: 1080,
+        elements: [
+          {
+            id: "body-copy-text",
+            type: MANIFEST_ELEMENT_TYPES.TEXT,
+            bounds: { x: 120, y: 96, width: 720, height: 120 },
+            text: {
+              content: "A paragraph that wraps\ninside its layout column.",
+              style: bodyStyle,
+              lines: [
+                {
+                  x: 144,
+                  y: 104,
+                  width: 300,
+                  height: 30,
+                  text: "A paragraph that wraps",
+                },
+                {
+                  x: 144,
+                  y: 138,
+                  width: 232,
+                  height: 30,
+                  text: "inside its layout column.",
+                },
+              ],
+              paragraph: {
+                wrap: "square",
+                margins: { leftPx: 24, topPx: 8, rightPx: 24, bottomPx: 8 },
+              },
+              frame: {
+                strategy: "semantic-container",
+                bounds: { x: 120, y: 96, width: 720, height: 120 },
+                inkBounds: { x: 144, y: 104, width: 300, height: 64 },
+                semanticBounds: { x: 120, y: 96, width: 720, height: 120 },
+              },
+            },
+          },
+        ],
+      },
+    ],
+  });
+
+  const [text] = manifest.slides[0].elements;
+  assert.equal(text.bounds.width, 720);
+  assert.equal(text.text.paragraph.wrap, "square");
+  assert.equal(text.text.paragraph.fit, "shrink");
+  assert.equal(text.text.paragraph.margins.leftPx, 24);
+  assert.equal(text.text.frame.strategy, "semantic-container");
+  assert.equal(text.text.frame.inkBounds.width, 300);
+  assert.equal(manifest.slides[0].texts[0].fit, "shrink");
   assert.equal(manifest.stats.textSuppressionRegionCount, 1);
 });

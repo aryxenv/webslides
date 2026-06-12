@@ -505,6 +505,82 @@ test("native PPTX writer keeps measured text lines in stable semantic boxes", as
   assert.doesNotMatch(slideXml, /<a:srgbClr val="FF0000">/);
 });
 
+test("native PPTX writer uses semantic wrap frames with shrink autofit", async () => {
+  const wrappedStyle = {
+    ...textStyle,
+    align: "left",
+    fontSizePx: 24,
+    fontSizePt: 12,
+    lineHeightPx: 32,
+    lineHeightPt: 16,
+    color: "374151",
+  };
+  const { slideXml } = await readGeneratedParts({
+    index: 0,
+    width: 1920,
+    height: 1080,
+    elements: [
+      {
+        id: "wrapped-body",
+        type: MANIFEST_ELEMENT_TYPES.TEXT,
+        classification: NATIVE_OBJECT_KINDS.VISIBLE_TEXT,
+        nativeKind: NATIVE_OBJECT_KINDS.VISIBLE_TEXT,
+        zOrder: zOrder(1),
+        bounds: bounds(120, 96, 720, 120),
+        opacity: 1,
+        text: {
+          content: "A paragraph that wraps\ninside its layout column.",
+          style: wrappedStyle,
+          paragraph: {
+            align: "left",
+            verticalAlign: "top",
+            wrap: "square",
+            fit: "shrink",
+            margins: { leftPx: 24, topPx: 8, rightPx: 24, bottomPx: 8 },
+          },
+          lines: [
+            {
+              ...bounds(144, 104, 300, 30),
+              text: "A paragraph that wraps",
+              baselineY: 128,
+              runs: [
+                {
+                  text: "A paragraph that wraps",
+                  bounds: bounds(144, 104, 300, 30),
+                  boxes: [bounds(144, 104, 300, 30)],
+                  style: wrappedStyle,
+                },
+              ],
+            },
+            {
+              ...bounds(144, 138, 232, 30),
+              text: "inside its layout column.",
+              baselineY: 162,
+              runs: [
+                {
+                  text: "inside its layout column.",
+                  bounds: bounds(144, 138, 232, 30),
+                  boxes: [bounds(144, 138, 232, 30)],
+                  style: wrappedStyle,
+                },
+              ],
+            },
+          ],
+        },
+      },
+    ],
+  });
+
+  assert.match(slideXml, /wrap="square"/);
+  assert.match(
+    slideXml,
+    /<a:normAutofit fontScale="92%" lnSpcReduction="20%"\/>/,
+  );
+  assert.match(slideXml, /<a:off x="762000" y="609600"\/><a:ext cx="4572000" cy="762000"\/>/);
+  assert.match(slideXml, /lIns="152400" tIns="50800" rIns="152400" bIns="50800"/);
+  assert.doesNotMatch(slideXml, /wrap="none"/);
+});
+
 test("native PPTX writer calibrates wrapper-captured header typography from measured runs", async () => {
   const wrapperStyle = {
     ...textStyle,

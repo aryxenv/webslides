@@ -329,6 +329,8 @@ function captureScript() {
       dataPptxNative: element.getAttribute("data-pptx-native") ?? "",
       dataPptxRole: element.getAttribute("data-pptx-role") ?? "",
       dataPptxGroup: element.getAttribute("data-pptx-group") ?? "",
+      dataPptxWrap: element.getAttribute("data-pptx-wrap") ?? "",
+      dataPptxFit: element.getAttribute("data-pptx-fit") ?? "",
       role: element.getAttribute("role") ?? "",
       ariaLabel: element.getAttribute("aria-label") ?? "",
       title: element.getAttribute("title") ?? "",
@@ -600,6 +602,81 @@ function captureScript() {
     };
   }
 
+  function boundedValue(value, min, max) {
+    return Math.max(min, Math.min(max, value));
+  }
+
+  function semanticTextFrame(element, pageRect) {
+    const rect = relativeRect(element.getBoundingClientRect(), pageRect);
+    return {
+      x: boundedValue(rect.x, 0, pageRect.width),
+      y: boundedValue(rect.y, 0, pageRect.height),
+      width: Math.max(0, Math.min(rect.width, pageRect.width - Math.max(0, rect.x))),
+      height: Math.max(0, Math.min(rect.height, pageRect.height - Math.max(0, rect.y))),
+    };
+  }
+
+  function explicitWrapValue(element) {
+    const explicit = element.getAttribute("data-pptx-wrap");
+    return explicit === "square" || explicit === "none" ? explicit : null;
+  }
+
+  function explicitFitValue(element) {
+    const explicit = element.getAttribute("data-pptx-fit")?.toLowerCase();
+    if (!explicit) {
+      return null;
+    }
+    if (["none", "no-autofit", "shrink", "resize", "shape"].includes(explicit)) {
+      return explicit;
+    }
+    return null;
+  }
+
+  function shouldWrapSemanticText(element, style, lineCount, centerInNativeShape) {
+    const explicit = explicitWrapValue(element);
+    if (explicit) {
+      return explicit === "square";
+    }
+    if (centerInNativeShape) {
+      return false;
+    }
+
+    const whiteSpace = style.whiteSpace;
+    if (whiteSpace === "nowrap" || whiteSpace === "pre") {
+      return false;
+    }
+
+    return (
+      element.hasAttribute("data-pptx-text") ||
+      isSemanticTextContainer(element) ||
+      lineCount > 1
+    );
+  }
+
+  function textFrameMargins({ frameBounds, inkBounds, style, useSemanticFrame }) {
+    if (!useSemanticFrame) {
+      return { leftPx: 0, topPx: 0, rightPx: 0, bottomPx: 0 };
+    }
+
+    const paddingLeft = parsePixels(style.paddingLeft);
+    const paddingTop = parsePixels(style.paddingTop);
+    const paddingRight = parsePixels(style.paddingRight);
+    const paddingBottom = parsePixels(style.paddingBottom);
+    const measuredLeft = Math.max(0, inkBounds.x - frameBounds.x);
+    const measuredTop = Math.max(0, inkBounds.y - frameBounds.y);
+    const useMeasuredLeft =
+      style.textAlign !== "center" &&
+      style.textAlign !== "right" &&
+      style.textAlign !== "end";
+
+    return {
+      leftPx: useMeasuredLeft ? Math.max(paddingLeft, measuredLeft) : paddingLeft,
+      topPx: Math.max(paddingTop, measuredTop),
+      rightPx: paddingRight,
+      bottomPx: paddingBottom,
+    };
+  }
+
   function textSegmentsForNode(node, style, pageRect, firstOrder) {
     const rawText = node.textContent ?? "";
     const matches = Array.from(rawText.matchAll(/[^\S\r\n]+|\S+[^\S\r\n]*/g));
@@ -809,9 +886,19 @@ function captureScript() {
       });
       const lineBoxes = mergeLineBoxes(group.boxes);
       const textLines = buildTextLines(lineBoxes, group.segments);
-      const bounds = centerInNativeShape
-        ? relativeRect(element.getBoundingClientRect(), pageRect)
-        : expandBounds(unionBounds(lineBoxes), pageRect, elementTextStyle);
+      const inkBounds = unionBounds(lineBoxes);
+      const semanticFrameBounds = semanticTextFrame(element, pageRect);
+      const wrapText = shouldWrapSemanticText(
+        element,
+        style,
+        textLines.length,
+        centerInNativeShape,
+      );
+      const useSemanticFrame = centerInNativeShape || wrapText;
+      const bounds = useSemanticFrame
+        ? semanticFrameBounds
+        : expandBounds(inkBounds, pageRect, elementTextStyle);
+      const fit = explicitFitValue(element) ?? (wrapText ? "shrink" : "no-autofit");
       const grouping = {
         strategy: "nearest-semantic-text-container",
         containerId: base.domId,
@@ -847,8 +934,20 @@ function captureScript() {
           paragraph: {
             align: centerInNativeShape ? "center" : elementTextStyle.align,
             verticalAlign: centerInNativeShape ? "middle" : "top",
-            wrap: "none",
-            margins: { leftPx: 0, topPx: 0, rightPx: 0, bottomPx: 0 },
+            wrap: wrapText ? "square" : "none",
+            fit,
+            margins: textFrameMargins({
+              frameBounds: bounds,
+              inkBounds,
+              style,
+              useSemanticFrame,
+            }),
+          },
+          frame: {
+            strategy: useSemanticFrame ? "semantic-container" : "measured-ink",
+            bounds,
+            inkBounds,
+            semanticBounds: semanticFrameBounds,
           },
           grouping,
         },

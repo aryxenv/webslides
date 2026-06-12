@@ -336,6 +336,10 @@ test("native quality gates validate generated PPTX package and report metrics", 
     assert.equal(packageInspection.totals.fullSlideRasterPictures, 0);
     assert.equal(packageInspection.totals.hiddenTextRuns, 0);
     assert.equal(packageInspection.totals.textBoxes, 3);
+    assert.equal(packageInspection.totals.wrapNoneTextBoxes, 3);
+    assert.equal(packageInspection.totals.noAutofitTextBoxes, 3);
+    assert.equal(packageInspection.totals.wrapSquareTextBoxes, 0);
+    assert.equal(packageInspection.totals.normalAutofitTextBoxes, 0);
     assert.ok(packageInspection.totals.shapes >= 3);
     assert.ok(packageInspection.totals.connectors >= 1);
     assert.ok(packageInspection.totals.groupShapes >= 1);
