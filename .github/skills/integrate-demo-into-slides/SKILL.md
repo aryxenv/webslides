@@ -46,6 +46,10 @@ State your integration plan briefly before large moves.
   to the slide and don't leak global CSS. If you need a reusable primitive the
   deck doesn't have, add it to the shared UI system (`src/components/ui`) in the
   existing `cva`/token style and use it instead of a one-off or a heavy dep.
+- Iconography: use named imports from `lucide-react` for deck-native icons, or
+  to replace generic inline SVGs from the source demo when appropriate. Size and
+  color icons with Tailwind classes using theme tokens; preserve brand/product
+  logos when they are part of the demo's identity.
 - Backgrounds must be themed too: replace raw white surfaces (`bg-white`,
   `background: white`, `#fff`, etc.) with very light theme-derived surfaces such
   as `bg-background`, `bg-card`, `bg-muted/30`, or subtle gradients using those
@@ -54,6 +58,8 @@ State your integration plan briefly before large moves.
 DON'T:
 
 - Hardcode colors unless the demo's identity requires it.
+- Add a second icon library when `lucide-react` can cover generic app/demo
+  iconography.
 - Leave app/demo backgrounds as fixed white when they can be expressed with the
   deck's light theme tokens.
 - Run the demo's timers/sockets/autoplay while the slide is inactive — gate on

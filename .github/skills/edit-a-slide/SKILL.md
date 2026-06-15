@@ -34,6 +34,9 @@ DO:
   doesn't exist yet, add it to the shared UI system (`src/components/ui`) in the
   existing style (theme tokens + `cva` variants) and use it — rather than a
   one-off or a new heavy dependency.
+- Use `lucide-react` named icons when iconography helps the slide. Size/color
+  icons with Tailwind classes and semantic theme tokens, keep decorative icons
+  `aria-hidden="true"`, and rely on nearby text/labels for accessible names.
 - Use semantic theme tokens (`bg-card`, `border-border`, `text-muted-foreground`,
   `bg-primary`, …) so the slide stays monochrome and themeable.
 
@@ -41,6 +44,8 @@ DON'T:
 
 - Hardcode colors or introduce off-theme palette classes (one exception:
   intentional semantic states like red for errors, when requested).
+- Add a new icon package or hand-roll inline SVGs when `lucide-react` covers the
+  need.
 - Refactor or restyle parts the user didn't ask about, or change the global
   design system / UI primitives to fix one slide.
 - Delete an entire slide from the deck; use `delete-a-slide` for whole-slide

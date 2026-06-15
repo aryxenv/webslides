@@ -39,6 +39,11 @@ the deck consistent and unbreakable.
 - Compose from the shared primitives: `Card`, `Button`, `Badge`
   (`@/components/ui/*`) and the `cn` helper (`@/lib/utils`). Reach for these
   before writing bespoke markup.
+- If the slide needs icons, import named icons from `lucide-react` and size/color
+  them with Tailwind classes using theme tokens (for example `h-4 w-4`,
+  `text-muted-foreground`, `text-primary`). Mark decorative icons with
+  `aria-hidden="true"` and give meaningful icons accessible text through the
+  surrounding label/copy.
 - If a primitive you need doesn't exist yet, **add it to the shared UI system**
   (`src/components/ui`) following the existing pattern — theme tokens + `cva`
   variants like `Button`/`Badge` — and reuse it. Don't hand-roll a one-off for
@@ -58,6 +63,8 @@ DON'T:
 - Hardcode hex/RGB colors or Tailwind palette colors (`bg-blue-500`, …). The
   only acceptable exception is a deliberate semantic signal (e.g. red for an
   error state) — and only when the user wants it.
+- Hand-roll inline SVG icons or add another icon library when a suitable Lucide
+  icon exists.
 - Steal focus, autoplay audio/video, or run timers/animations while
   `isActive === false`. All slides stay mounted (opacity crossfade), so gate any
   heavy or attention-grabbing side effect behind `isActive`.
