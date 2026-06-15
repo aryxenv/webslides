@@ -46,10 +46,16 @@ State your integration plan briefly before large moves.
   to the slide and don't leak global CSS. If you need a reusable primitive the
   deck doesn't have, add it to the shared UI system (`src/components/ui`) in the
   existing `cva`/token style and use it instead of a one-off or a heavy dep.
+- Backgrounds must be themed too: replace raw white surfaces (`bg-white`,
+  `background: white`, `#fff`, etc.) with very light theme-derived surfaces such
+  as `bg-background`, `bg-card`, `bg-muted/30`, or subtle gradients using those
+  tokens. Keep the visual feel light, but let the active deck theme control it.
 
 DON'T:
 
 - Hardcode colors unless the demo's identity requires it.
+- Leave app/demo backgrounds as fixed white when they can be expressed with the
+  deck's light theme tokens.
 - Run the demo's timers/sockets/autoplay while the slide is inactive — gate on
   `isActive` (slides stay mounted via opacity crossfade).
 - Register more than one deck entry for one demo.
@@ -95,6 +101,7 @@ instead of bundling a second backend:
   strings/`truncate` appear, so the embedded demo doesn't overflow on phones.
 - Verify at `http://localhost:5173/?slide=<slide-id>`: the demo renders and is
   interactive, the server route responds (if used), and there's no horizontal
-  overflow. Run `npm run build` to typecheck and `npx prettier --write` on
-  changed files.
+  overflow. Confirm backgrounds adapt to the deck theme instead of staying fixed
+  white. Run `npm run build` to typecheck and `npx prettier --write` on changed
+  files.
 - Do not commit generated PowerPoint exports unless the user explicitly asks.

@@ -27,7 +27,8 @@ Scope your edit to the smallest surface that fully satisfies the request.
 DO:
 
 - Keep the slide wrapped in `SlideFrame`; edit `eyebrow`/`title`/children rather
-  than rebuilding the header.
+  than rebuilding the header. Keep any `title` short and simple - usually 1-5
+  plain words.
 - Reuse the shared primitives (`Card`, `Button`, `Badge`, `cn`) and existing
   patterns in the slide for consistency. If the change needs a primitive that
   doesn't exist yet, add it to the shared UI system (`src/components/ui`) in the
@@ -55,9 +56,15 @@ These are the things that silently break a slide if ignored:
   `cycleItems` in `src/Presentation.tsx` to match, and keep each card's
   `onClick={() => onSelectCycle(index)}` + active style (`border-primary` vs
   `border-border`) consistent with its index.
-- **Responsiveness**: keep a base `grid-cols-1` on responsive grids and
-  `min-w-0` on flex/grid children holding `truncate`/long strings — removing
-  these reintroduces horizontal overflow on phones.
+- **Responsiveness**: target responsive SPA design across phones, tablets,
+  laptops, desktop monitors, and presentation displays. Keep a base
+  `grid-cols-1` on responsive grids and `min-w-0` on flex/grid children holding
+  `truncate`/long strings — removing these reintroduces horizontal overflow on
+  phones.
+- **Desktop bounds**: preserve the deck's overflow/scroll functionality as a
+  safety net for small screens and edge cases, but rebalance copy, density,
+  spacing, and grid columns so the normal desktop presentation layout does not
+  trigger vertical overflow/scroll at common 16:9 resolutions.
 - **Always-mounted**: slides render even when inactive (opacity crossfade). Gate
   timers, autoplay, and focus changes behind `isActive`.
 - **Ids are contracts**: changing a slide's `id` changes its shareable URL. Only
@@ -67,7 +74,8 @@ These are the things that silently break a slide if ignored:
 ## Phase 4 — Verify
 
 - Dev server hot-reloads on save (`http://localhost:5173/?slide=<slide-id>`).
-  Confirm the change, that cycling still works, and that there's no horizontal
-  overflow at a narrow width.
+  Confirm the change, that cycling still works, that there's no horizontal
+  overflow at a narrow width, and that the desktop layout does not normally
+  trigger overflow/scroll.
 - Run `npm run build` to typecheck and `npx prettier --write` on changed files.
 - Do not commit generated PowerPoint exports unless the user explicitly asks.

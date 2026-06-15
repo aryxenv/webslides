@@ -34,8 +34,8 @@ the deck consistent and unbreakable.
   }
   ```
 - Wrap the slide in `SlideFrame` (`@/components/ui/slide-frame`) with an
-  `eyebrow` and `title` so the header matches the deck. Put your content as its
-  children.
+  `eyebrow` and `title` so the header matches the deck. The `title` MUST be
+  short and simple - usually 1-5 plain words. Put your content as its children.
 - Compose from the shared primitives: `Card`, `Button`, `Badge`
   (`@/components/ui/*`) and the `cn` helper (`@/lib/utils`). Reach for these
   before writing bespoke markup.
@@ -97,13 +97,20 @@ it to appear (array order = deck order):
 
 These rules prevent the two failure modes that actually break slides:
 
+- Target responsive SPA design for every slide: the same slide should adapt
+  cleanly across phones, tablets, laptops, desktop monitors, and presentation
+  displays.
+- Design desktop layouts to fit within the slide viewport at common 16:9
+  resolutions without triggering vertical overflow/scroll. Keep the deck's
+  overflow/scroll functionality available as a safety net for small screens and
+  edge cases, but do not rely on it for the normal desktop presentation layout.
 - Any responsive grid MUST include a base single-column track, e.g.
   `grid grid-cols-1 … lg:grid-cols-2`. A bare `grid` collapses to an
   `auto`-sized column on phones and overflows horizontally.
 - Add `min-w-0` to any flex/grid child that contains `truncate` text or long
   unbroken strings (file paths, URLs), otherwise it forces the layout wide.
-- Design mobile-first; the slide scrolls vertically on small screens and swipe
-  navigation is handled globally — don't add your own horizontal scroll.
+- Design mobile-first; the slide may scroll vertically on small screens and
+  swipe navigation is handled globally — don't add your own horizontal scroll.
 
 ## Phase 6 — Verify
 
