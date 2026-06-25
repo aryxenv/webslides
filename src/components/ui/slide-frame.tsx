@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 import { BrandLockup } from "@/components/ui/brand-lockup";
+import { FullscreenToggle } from "@/components/ui/fullscreen-toggle";
 import { HelpDialog } from "@/components/ui/help-dialog";
 import { ServerHealthDot } from "@/components/ui/server-health-dot";
 import { isPresentationExportMode } from "@/lib/export-mode";
@@ -50,6 +51,7 @@ export function SlideFrame({
               {eyebrowAdornment}
             </div>
             <div className="ml-auto flex shrink-0 items-center gap-3">
+              {exportMode ? null : <FullscreenToggle />}
               {exportMode ? null : <HelpDialog />}
               <BrandLockup />
             </div>
